@@ -1,0 +1,202 @@
+Some ideas for rules, based on old code:
+
+# ==============================================================================
+# Common Tasks
+# ==============================================================================
+
+CopyFilesTask
+ExecutableTask
+- JavaExecutableTask
+- NodeExecutableTask
+- PythonExecutableTask
+
+# ==============================================================================
+# Core
+# ==============================================================================
+
+copy_files(
+    name='a',
+    srcs=['a/file.txt'])
+- results in out/a/file.txt
+
+copy_files(
+    name='a',
+    srcs=glob('**/*.txt'))
+- results in out/things/a/file.txt + others
+
+concat_files(
+    name='catted',
+    srcs=['a.txt'] + glob('**/*.txt'))
+- results in out/catted
+
+concat_files(
+    name='catted',
+    srcs=['a.txt'] + glob('**/*.txt'),
+    out='catted.txt')
+- results in out/catted.txt
+
+template_files(
+    name='templated_txt',
+    srcs=glob('**/*.txt'),
+    params={
+        'author': 'bob',
+        'year': '2012',
+        })
+- results in out/...txt with ${author} and ${year} replaced
+
+# ==============================================================================
+# Audio
+# ==============================================================================
+
+compile_soundbank(
+    name='bank1',
+    srcs=['*.wav'],
+    out='assets/audio/')
+- creates out/assets/audio/bank1.wav + bank1.json
+
+SOUNDBANK_FORMATS = select_any({
+    'RELEASE': ['audio/wav', 'audio/mpeg', 'audio/ogg', 'audio/mp4',],
+    }, ['audio/wav',])
+transcode_audio(
+    name='encoded_banks',
+    srcs=[':bank1', ':bank2'],
+    formats=SOUNDBANK_FORMATS)
+- encodes all input audio files to the specified formats, updating the json
+  with any new data sources - in this case, it files bank1.json and bank2.json,
+  transcodes all sources for them, and updates their respective json files -
+  the output files are all inputs + the transcoded files
+
+generate_soundbank_js(
+    name='bank_js',
+    srcs=':encoded_banks',
+    namespace='foo.audio',
+    gen='foo/audio/')
+- for each json file generates a js file from the json metadata, resulting in
+  gen/foo/audio/bank1.js (class foo.audio.bank1) + bank2.js
+
+compile_tracklist(
+    name='music',
+    srcs=['*.ogg'],)
+- creates out/assets/audio/music.ogg (copy) + music.json
+
+TRACKLIST_FORMATS=select_any({
+    'RELEASE': ['audio/mpeg', 'audio/ogg', 'audio/mp4',],
+    }, ['audio/ogg',])
+transcode_audio(
+    name='encoded_music',
+    srcs=':music',
+    formats=TRACKLIST_FORMATS)
+generate_tracklist_js(
+    name='music_js',
+    srcs=':encoded_music',
+    namespace='foo.audio',
+    gen='foo/audio/')
+- for each json file generates a js file from the json metadata, resulting in
+  gen/foo/audio/music.js (class foo.audio.music)
+
+
+# ==============================================================================
+# GLSL
+# ==============================================================================
+
+compile_glsl(
+    name='compiled_glsl',
+    srcs=glob('assets/glsl/**/*.glsl*'))
+- compiles all .glsl files into .json files, such as assets/glsl/a.glsl ->
+  out/assets/glsl/a.json - any glsllib files are ignored, but may be used by
+  the compiler
+  outputs are only the json files
+
+generate_glsl_js(
+    name='glsl_js',
+    srcs=':compiled_glsl',
+    namespace='foo.glsl',
+    gen='foo/glsl/')
+- for each json file generates a js file from the json metadata, resulting in
+  gen/foo/glsl/a.js (class foo.glsl.a)
+
+
+# ==============================================================================
+# CSS
+# ==============================================================================
+
+compile_gss(
+    name='page_gss',
+    srcs=glob('assets/css/**/*.gss'),
+    out='css/page_gss.css',
+    gen='css/page_gss.js')
+- compiles all gss into out/css/page.css, and drops the map file to
+  gen/css/page.js
+
+
+# ==============================================================================
+# Closure JS
+# ==============================================================================
+
+JS_NAMESPACES=['myns1', 'myns2']
+
+fix_closure_js(
+    name='fix_js',
+    srcs=glob('src/**/*.js'),
+    namespaces=JS_NAMESPACES)
+- runs fixjsstyle on all sources (with the same args as lint_closure_js) and
+  returns all srcs as outputs
+
+lint_closure_js(
+    name='lint_js',
+    srcs=':fix_js',
+    namespaces=JS_NAMESPACES)
+- runs gjslist over all of the source files with the following args:
+  --multiprocess
+  --strict
+  --jslint_error=all
+  --closurized_namespaces=goog,gf, + namespaces
+  and returns all srcs as outputs
+
+file_set(
+    name='all_js',
+    src_filter='*.js',
+    srcs=[':fix_js', ':audio_rules', ':page_gss',])
+generate_closure_deps_js(
+    name='deps_js',
+    srcs=[':all_js'],
+    gen='my_deps.js')
+- runs genjsdeps on all sources and generate the gen/my_deps.js file
+  note that this pulls in all generated JS code by sourcing from all rules
+
+file_set(
+    name='uncompiled',
+    deps=[':deps_js'])
+- a synthetic rule to allow for easy 'uncompiled' building
+
+SHARED_JS_FLAGS=['--define=foo=false']
+compile_closure_js(
+    name='compiled_js',
+    srcs=[':all_js', ':deps_js',],
+    out='js/compiled.js',
+    root_namespace='myns1.start',
+    compiler_flags=SHARED_JS_FLAGS + select_many({
+        'RELEASE': ['--define=gf.BUILD_CLIENT=false',
+                    '--define=goog.DEBUG=false',
+                    '--define=goog.asserts.ENABLE_ASSERTS=false',],
+        })
+- creates a out/js/compiled.js file based on all sources
+  could add source_map='foo.map' to enable source mapping output
+  wrap_with_global='s' to do (function(){...})(s)
+
+
+# ==============================================================================
+# Future...
+# ==============================================================================
+
+* wget/curl-esque rules w/ caching (grab text/json/manifest from somewhere)
+* SASS/LESS/etc
+* uglifyjs/etc
+* jslint
+* html/json/etc linting
+* localization utils (common format translations)
+* soy compiler
+* images/texture compression
+* spriting
+* more advanced templating with mako
+* git info (get current commit hash/etc) - embedded version #s

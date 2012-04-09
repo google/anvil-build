@@ -1,0 +1,21 @@
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    def __str__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+
+omit =
+    BUILD
+    anvil/test.py
+    run-tests.py
+    *_test.py
+    /usr/**
+    /tmp/**
+    /Library/Python/**
+    /private/var/**
