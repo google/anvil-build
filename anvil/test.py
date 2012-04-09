@@ -19,16 +19,22 @@ import util
 def main():
   """Entry point for running tests.
   """
-
-  # Only find test_*.py files under anvil/
-  loader = unittest2.TestLoader()
-  tests = loader.discover('anvil',
-                          pattern='*_test.py',
-                          top_level_dir='.')
+  # Collect tests
+  tests = collector()
 
   # Run the tests in the default runner
   test_runner = unittest2.runner.TextTestRunner(verbosity=2)
   test_runner.run(tests)
+
+
+def collector():
+  """Collects test for the setuptools test_suite command.
+  """
+  # Only find test_*.py files under anvil/
+  loader = unittest2.TestLoader()
+  return loader.discover('anvil',
+                         pattern='*_test.py',
+                         top_level_dir='.')
 
 
 class AsyncTestCase(unittest2.TestCase):

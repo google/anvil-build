@@ -44,7 +44,7 @@ setup(
         'unittest2>=0.5.1',
         ],
     packages=['anvil',],
-    test_suite='anvil.test',
+    test_suite='anvil.test.collector',
     include_package_data=True,
     zip_safe=True,
     entry_points = {
