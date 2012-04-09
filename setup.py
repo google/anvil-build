@@ -18,8 +18,22 @@ from setuptools import setup
 
 
 # Require Python 2.6+
-if sys.hexversion < 0x02060000:
+if sys.version_info < (2, 6, 0):
   raise RuntimeError('Python 2.6.0 or higher required')
+
+
+install_requires = [
+    'argparse>=1.2.1',
+    'autobahn>=0.5.1',
+    'glob2>=0.3',
+    'networkx>=1.6',
+    'Sphinx>=1.1.3',
+    'watchdog>=0.6',
+    ]
+tests_require = [
+    'coverage>=3.5.1',
+    'unittest2>=0.5.1',
+    ]
 
 
 setup(
@@ -33,16 +47,11 @@ setup(
     description='A parallel build system and content pipeline',
     long_description=__doc__,
     platforms='any',
-    install_requires=[
-        'argparse>=1.2.1',
-        'autobahn>=0.5.1',
-        'coverage>=3.5.1',
-        'glob2>=0.3',
-        'networkx>=1.6',
-        'Sphinx>=1.1.3',
-        'watchdog>=0.6',
-        'unittest2>=0.5.1',
-        ],
+    install_requires=install_requires,
+    tests_require=tests_require,
+    extras_require={
+        'test': tests_require,
+        },
     packages=['anvil',],
     test_suite='anvil.test.collector',
     include_package_data=True,
