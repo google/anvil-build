@@ -120,7 +120,7 @@ class FixtureTestCase(AsyncTestCase):
     # Copy fixture files
     if self.fixture:
       self.root_path = os.path.join(self.root_path, self.fixture)
-      build_path = util.find_build_path()
+      build_path = util.get_anvil_path()
       if not build_path:
         raise Error('Unable to find build path')
       fixture_path = os.path.join(

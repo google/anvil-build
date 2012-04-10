@@ -17,19 +17,13 @@ else:
   timer = time.time # pragma: no cover
 
 
-def find_build_path(): # pragma: no cover
-  """Scans up the current path for the anvil/ folder.
+def get_anvil_path():
+  """Gets the anvil/ path.
 
   Returns:
-    The 'anvil/' folder.
+    The full path to the anvil/ source.
   """
-  path = sys.path[0]
-  while True:
-    if os.path.exists(os.path.join(path, 'anvil')):
-      return os.path.join(path, 'anvil')
-    path = os.path.dirname(path)
-    if not len(path):
-      return None
+  return os.path.normpath(os.path.dirname(__file__))
 
 
 def is_rule_path(value):

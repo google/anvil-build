@@ -31,7 +31,7 @@ def create_argument_parser(program_usage, description=''):
   Returns:
     An ArgumentParser that can be used to parse arguments.
   """
-  parser = argparse.ArgumentParser(prog='manage.py serve',
+  parser = argparse.ArgumentParser(prog=program_usage,
                                    description=description,
                                    formatter_class=_ComboHelpFormatter)
   _add_common_args(parser)

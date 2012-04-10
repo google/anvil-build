@@ -16,15 +16,6 @@ import sys
 import util
 
 
-def _get_anvil_path():
-  """Gets the anvil/ path.
-
-  Returns:
-    The full path to the anvil/ source.
-  """
-  return os.path.normpath(os.path.dirname(__file__))
-
-
 def manage_command(command_name, command_help=None):
   """A decorator for management command functions.
   Use this to register management command functions. A function decorated with
@@ -60,7 +51,7 @@ def discover_commands(search_path=None):
   """
   commands = {}
   if not search_path:
-    commands_path = os.path.join(_get_anvil_path(), 'commands')
+    commands_path = os.path.join(util.get_anvil_path(), 'commands')
   else:
     commands_path = search_path
   for (root, dirs, files) in os.walk(commands_path):
@@ -90,7 +81,9 @@ def usage(commands):
   s = 'manage.py command [-h]\n'
   s += '\n'
   s += 'Commands:\n'
-  for command_name in commands:
+  command_names = commands.keys()
+  command_names.sort()
+  for command_name in command_names:
     s += '  %s\n' % (command_name)
     command_help = commands[command_name].command_help
     if command_help:
@@ -136,7 +129,7 @@ def run_command(args=None, cwd=None, commands=None):
 def main(): # pragma: no cover
   """Entry point for scripts."""
   # Always add anvil/.. to the path
-  sys.path.insert(1, _get_anvil_path())
+  sys.path.insert(1, util.get_anvil_path())
 
   commands = discover_commands()
 
@@ -155,4 +148,6 @@ def main(): # pragma: no cover
 
 
 if __name__ == '__main__':
+  # Always add anvil/.. to the path
+  sys.path.insert(1, os.path.join(util.get_anvil_path(), '..'))
   main()
