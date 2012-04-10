@@ -55,7 +55,7 @@ TESTS_REQUIRE = [
 
 
 setup(
-    name='Anvil',
+    name='anvil-build',
     version=VERSION,
     author='Ben Vanik',
     author_email='benvanik@google.com',
