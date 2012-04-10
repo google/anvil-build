@@ -1,0 +1,4 @@
+include AUTHORS COPYING LICENSE README.md
+
+exclude MANIFEST.in
+global-exclude *_test.py

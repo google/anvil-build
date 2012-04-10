@@ -18,11 +18,28 @@ from setuptools import setup
 
 
 # Require Python 2.6+
-if sys.version_info < (2, 6, 0):
-  raise RuntimeError('Python 2.6.0 or higher required')
+if sys.version_info < (2, 6):
+  raise RuntimeError('Python 2.6 or higher required')
 
 
-install_requires = [
+# TODO(benvanik): pull this from anvil.version?
+VERSION = '0.0.1dev'
+
+CLASSIFIERS = [
+    'Development Status :: 2 - Pre-Alpha',
+    'Environment :: Console',
+    'Intended Audience :: Developers',
+    'License :: OSI Approved :: Apache Software License',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2.6',
+    'Programming Language :: Python :: 2.7',
+    'Topic :: Software Development :: Build Tools',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Utilities',
+    ]
+
+INSTALL_REQUIRES = [
     'argparse>=1.2.1',
     'autobahn>=0.5.1',
     'glob2>=0.3',
@@ -30,7 +47,8 @@ install_requires = [
     'Sphinx>=1.1.3',
     'watchdog>=0.6',
     ]
-tests_require = [
+
+TESTS_REQUIRE = [
     'coverage>=3.5.1',
     'unittest2>=0.5.1',
     ]
@@ -38,39 +56,39 @@ tests_require = [
 
 setup(
     name='Anvil',
-    version='0.0.1dev',
-    url='https://github.com/benvanik/anvil-build/',
-    download_url='https://github.com/benvanik/anvil-build/tarball/master',
-    license='Apache',
+    version=VERSION,
     author='Ben Vanik',
     author_email='benvanik@google.com',
     description='A parallel build system and content pipeline',
     long_description=__doc__,
+    classifiers=CLASSIFIERS,
+    url='https://github.com/benvanik/anvil-build/',
+    download_url='https://github.com/benvanik/anvil-build/tarball/master',
+    license='Apache License 2.0',
     platforms='any',
-    install_requires=install_requires,
-    tests_require=tests_require,
+    install_requires=INSTALL_REQUIRES,
+    tests_require=TESTS_REQUIRE,
     extras_require={
-        'test': tests_require,
+        'test': TESTS_REQUIRE,
         },
-    packages=['anvil',],
-    test_suite='anvil.test.collector',
+    packages=[
+        'anvil',
+        'anvil.commands',
+        'anvil.rules',
+        ],
     include_package_data=True,
-    zip_safe=True,
+    package_data={
+        'anvil.commands': '*_command.py',
+        'anvil.rules': '*_rules.py',
+        },
+    test_suite='anvil.test.collector',
+    # We dynamically load command/rule py files - would need to use
+    # pkg_resources or something else to be zip safe
+    # http://www.no-ack.org/2010/09/including-data-files-into-python.html
+    zip_safe=False,
     entry_points = {
         'console_scripts': [
             'anvil = anvil.manage:main',
             ],
-        },
-    classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Environment :: Console',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: Utilities',
-        ])
+        })
 
