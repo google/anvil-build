@@ -64,7 +64,7 @@ setup(
     long_description=__doc__,
     classifiers=CLASSIFIERS,
     url='https://github.com/benvanik/anvil-build/',
-    download_url='https://github.com/benvanik/anvil-build/tarball/master',
+    download_url='https://github.com/benvanik/anvil-build/tarball/master#egg=anvil-build',
     license='Apache License 2.0',
     platforms='any',
     install_requires=INSTALL_REQUIRES,
