@@ -78,8 +78,8 @@ setup(
         ],
     include_package_data=True,
     package_data={
-        'anvil.commands': '*_command.py',
-        'anvil.rules': '*_rules.py',
+        'anvil.commands': ['*_command.py'],
+        'anvil.rules': ['*_rules.py'],
         },
     test_suite='anvil.test.collector',
     # We dynamically load command/rule py files - would need to use

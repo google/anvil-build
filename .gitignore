@@ -51,6 +51,8 @@ npm-debug.log
 
 # Python
 *.egg-info
+build/
+dist/
 
 # npm/node
 .lock-wscript
