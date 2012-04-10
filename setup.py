@@ -22,8 +22,9 @@ if sys.version_info < (2, 6):
   raise RuntimeError('Python 2.6 or higher required')
 
 
-# TODO(benvanik): pull this from anvil.version?
-VERSION = '0.0.1dev'
+# Pull from the version py
+import anvil.version
+VERSION = anvil.version.VERSION_STR
 
 CLASSIFIERS = [
     'Development Status :: 2 - Pre-Alpha',

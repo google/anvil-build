@@ -137,7 +137,7 @@ def main(): # pragma: no cover
   """Entry point for scripts."""
   # Always add anvil/.. to the path
   sys.path.insert(1, _get_anvil_path())
-  print sys.path
+
   commands = discover_commands()
 
   try:

@@ -7,5 +7,5 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
 # TODO(benvanik): pull from somewhere?
-VERSION = (0, 0, 0, 1)
-VERSION_STR = '0.0.0.1'
+VERSION = (0, 0, 1, 'dev')
+VERSION_STR = '0.0.1dev'
