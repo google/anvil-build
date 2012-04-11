@@ -1,0 +1,17 @@
+# Copyright 2012 Google Inc. All Rights Reserved.
+
+# Bash completion script for anvil-build
+# Calls the anvil python script with ANVIL_AUTO_COMPLETE=1 and passes stdout
+# back to bash for completion
+
+# If the invocation of python becomes too slow it may be possible to move a lot
+# out into this script (like ant does) - for example, most rule files can be
+# parsed for name='rule' to find rule names
+
+_anvil_completion()
+{
+  COMPREPLY=($(COMP_WORDS="${COMP_WORDS[*]}" COMP_CWORD=$COMP_CWORD \
+               ANVIL_AUTO_COMPLETE=1 $1))
+}
+
+complete -o default -F _anvil_completion anvil

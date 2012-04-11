@@ -83,6 +83,9 @@ setup(
         'anvil.commands': ['*_command.py'],
         'anvil.rules': ['*_rules.py'],
         },
+    data_files=[
+        ('/etc/bash_completion.d', ['extras/anvil-completion'])
+        ],
     test_suite='anvil.test.collector',
     # We dynamically load command/rule py files - would need to use
     # pkg_resources or something else to be zip safe
