@@ -27,7 +27,6 @@ manage.py serve --http_port=8080 --daemon_port=8081 :some_daemon
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
-import argparse
 import os
 import sys
 

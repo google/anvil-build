@@ -11,7 +11,6 @@ manage.py test :test_rule ...
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
-import argparse
 import os
 import sys
 

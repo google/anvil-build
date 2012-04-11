@@ -7,7 +7,6 @@ Attempts to delete all paths the build system creates.
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
-import argparse
 import os
 import shutil
 import sys

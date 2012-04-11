@@ -20,7 +20,6 @@ manage.py deploy --clean --output=/some/bin/ :release_all
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
-import argparse
 import os
 import shutil
 import sys

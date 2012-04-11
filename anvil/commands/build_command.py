@@ -12,8 +12,6 @@ manage.py build --rebuild :some_rule
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
-import argparse
-
 import anvil.commands.util as commandutil
 from anvil.manage import manage_command
 

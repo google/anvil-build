@@ -16,8 +16,6 @@ the user to missing dependencies or help install them.
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
-import pip
-import pkg_resources
 import os
 import subprocess
 import sys
@@ -95,6 +93,7 @@ class PythonLibrary(Dependency):
           features of requirement strings.
     """
     super(PythonLibrary, self).__init__(*args, **kwargs)
+    import pkg_resources
     self.requires_root = True
     self.requirement_str = requirement_str
     self.requirement = pkg_resources.Requirement.parse(requirement_str)
@@ -105,6 +104,7 @@ class PythonLibrary(Dependency):
   def check(self):
     any_found = False
     any_valid = False
+    import pip
     for distro in pip.get_installed_distributions():
       # distro is a pkg_resources.Distribution
       if distro in self.requirement:
