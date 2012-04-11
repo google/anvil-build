@@ -8,6 +8,7 @@
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
+import argparse
 import fnmatch
 import imp
 import io
@@ -18,35 +19,101 @@ import sys
 import util
 
 
-def manage_command(command_name, command_help=None):
-  """A decorator for management command functions.
-  Use this to register management command functions. A function decorated with
-  this will be discovered and callable via manage.py.
+# Hack to get formatting in usage() correct
+class _ComboHelpFormatter(argparse.RawDescriptionHelpFormatter,
+                          argparse.ArgumentDefaultsHelpFormatter):
+  pass
 
-  Functions are expected to take (args, cwd) and return an error number that
-  will be passed back to the shell.
 
-  Args:
-    command_name: The name of the command exposed to the management script.
-    command_help: Help text printed alongside the command when queried.
+class ManageCommand(object):
+  """Base type for manage commands.
+  All subclasses of this type can be auto-discovered and added to the command
+  list.
   """
-  def _exec_command(fn):
-    fn.command_name = command_name
-    fn.command_help = command_help
-    return fn
-  return _exec_command
+
+  def __init__(self, name, help_short=None, help_long=None, *args, **kwargs):
+    """Initializes a manage command.
+
+    Args:
+      name: The name of the command exposed to the management script.
+      help_short: Help text printed alongside the command when queried.
+      help_long: Extended help text when viewing command help.
+    """
+    self.name = name
+    self.help_short = help_short
+    self.help_long = help_long
+
+  def create_argument_parser(self):
+    """Creates and sets up an argument parser.
+
+    Returns:
+      An ready to use ArgumentParser.
+    """
+    parser = argparse.ArgumentParser(prog='anvil %s' % (self.name),
+                                     description=self.help_long,
+                                     formatter_class=_ComboHelpFormatter)
+    # TODO(benvanik): add common arguments (logging levels/etc)
+    return parser
+
+  def _add_common_build_arguments(self, parser, targets=False):
+    """Adds common build arguments to an argument parser.
+
+    Args:
+      parser: ArgumentParser to modify.
+      targets: True to add variable target arguments.
+    """
+    # Threading/execution control
+    parser.add_argument('-j', '--jobs',
+                        dest='jobs',
+                        type=int,
+                        default=None,
+                        help=('Specifies the number of tasks to run '
+                              'simultaneously. If omitted then all processors '
+                              'will be used.'))
+
+    # Build context control
+    parser.add_argument('-f', '--force',
+                        dest='force',
+                        action='store_true',
+                        default=False,
+                        help=('Force all rules to run as if there was no '
+                              'cache.'))
+    parser.add_argument('--stop_on_error',
+                        dest='stop_on_error',
+                        action='store_true',
+                        default=False,
+                        help=('Stop building when an error is encountered.'))
+
+    # Target specification
+    if targets:
+      parser.add_argument('targets',
+                          nargs='+',
+                          metavar='target',
+                          help='Target build rule (such as :a or foo/bar:a)')
+
+  def execute(self, args, cwd):
+    """Executes the command.
+
+    Args:
+      args: ArgumentParser parsed argument object.
+      cwd: Current working directory.
+
+    Returns:
+      Return code of the command.
+    """
+    return 1
 
 
 def discover_commands(search_path=None):
   """Looks for all commands and returns a dictionary of them.
-  Commands are looked for under anvil/commands/, and should be functions
-  decorated with @manage_command.
+  Commands are discovered in the given search path (or anvil/commands/) by
+  looking for subclasses of ManageCommand.
 
   Args:
     search_path: Search path to use instead of the default.
 
   Returns:
-    A dictionary containing command-to-function mappings.
+    A dictionary containing name-to-ManageCommand mappings.
 
   Raises:
     KeyError: Multiple commands have the same name.
@@ -62,12 +129,19 @@ def discover_commands(search_path=None):
         full_path = os.path.join(root, name)
         module = imp.load_source(os.path.splitext(name)[0], full_path)
         for attr_name in dir(module):
-          if hasattr(getattr(module, attr_name), 'command_name'):
-            command_fn = getattr(module, attr_name)
-            command_name = command_fn.command_name
-            if commands.has_key(command_name):
-              raise KeyError('Command "%s" already defined' % (command_name))
-            commands[command_name] = command_fn
+          command_cls = getattr(module, attr_name)
+          # HACK(benvanik): remove this hack after module naming is cleaned up
+          # if (isinstance(command_cls, type) and
+          #     issubclass(command_cls, ManageCommand)):
+          if isinstance(command_cls, type):
+            import anvil.manage
+            if (command_cls != anvil.manage.ManageCommand and
+                issubclass(command_cls, anvil.manage.ManageCommand)):
+              command = command_cls()
+              command_name = command.name
+              if commands.has_key(command_name):
+                raise KeyError('Command "%s" already defined' % (command_name))
+              commands[command_name] = command
   return commands
 
 
@@ -89,7 +163,7 @@ def usage(commands=None):
   command_names.sort()
   for command_name in command_names:
     s += '  %s\n' % (command_name)
-    command_help = commands[command_name].command_help
+    command_help = commands[command_name].help_short
     if command_help:
       s += '    %s\n' % (command_help)
   return s
@@ -128,8 +202,10 @@ def run_command(args=None, cwd=None, commands=None):
   if not commands.has_key(command_name):
     raise ValueError('Command "%s" not found' % (command_name))
 
-  command_fn = commands[command_name]
-  return command_fn(args[1:], cwd)
+  command = commands[command_name]
+  parser = command.create_argument_parser()
+  parsed_args = parser.parse_args(args[1:])
+  return command.execute(args=parsed_args, cwd=cwd)
 
 
 def autocomplete(words, cword, cwd, commands=None):

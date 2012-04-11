@@ -1,6 +1,9 @@
-from anvil.manage import manage_command
+from anvil.manage import ManageCommand
 
 
-@manage_command('test_command')
-def test_command(args, cwd):
-  return 123
+class TestCommand(ManageCommand):
+  def __init__(self):
+    super(TestCommand, self).__init__(name='test_command')
+
+  def execute(self, args, cwd):
+    return 123

@@ -26,59 +26,58 @@ import argparse
 import os
 import sys
 
-import anvil.commands.util as commandutil
 from anvil.depends import DependencyManager
-from anvil.manage import manage_command
+from anvil.manage import ManageCommand
 
 
-def _get_options_parser():
-  """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('anvil depends', __doc__)
+class DependsCommand(ManageCommand):
+  def __init__(self):
+    super(DependsCommand, self).__init__(
+        name='depends',
+        help_short='Manages external rule type dependencies.',
+        help_long=__doc__)
 
-  # Add all common args
+  def create_argument_parser(self):
+    parser = super(DependsCommand, self).create_argument_parser()
 
-  # 'depends' specific
-  parser.add_argument('-i', '--install',
-                      dest='install',
-                      action='store_true',
-                      default=False,
-                      help=('Install any missing dependencies. Must be run as '
-                            'root.'))
-  parser.add_argument('--stop_on_error',
-                      dest='stop_on_error',
-                      action='store_true',
-                      default=False,
-                      help=('Stop installing when an error is encountered.'))
-  parser.add_argument('targets',
-                        nargs='+',
-                        metavar='target',
-                        help='Target build rule (such as :a or foo/bar:a)')
+    # 'depends' specific
+    parser.add_argument('-i', '--install',
+                        dest='install',
+                        action='store_true',
+                        default=False,
+                        help=('Install any missing dependencies. Must be run '
+                              'as root.'))
+    parser.add_argument('--stop_on_error',
+                        dest='stop_on_error',
+                        action='store_true',
+                        default=False,
+                        help=('Stop installing when an error is encountered.'))
+    parser.add_argument('targets',
+                          nargs='+',
+                          metavar='target',
+                          help='Target build rule (such as :a or foo/bar:a)')
 
-  return parser
+    return parser
 
+  def execute(self, args, cwd):
+    dep_manager = DependencyManager(cwd=cwd)
+    dependencies = dep_manager.scan_dependencies(args.targets)
 
-@manage_command('depends', 'Manages external rule dependencies.')
-def depends(args, cwd):
-  parser = _get_options_parser()
-  parsed_args = parser.parse_args(args)
+    if not len(requirements):
+      print 'No requirements found'
+      return True
 
-  dep_manager = DependencyManager(cwd=cwd)
-  dependencies = dep_manager.scan_dependencies(parsed_args.targets)
+    if not args.install:
+      # TODO(benvanik): prettier output
+      for dependency in dependencies:
+        print dependency
+      return True
 
-  if not len(requirements):
-    print 'No requirements found'
-    return True
+    # TODO(benvanik): check if running as root
+    running_as_root = False
+    if args.install and not running_as_root:
+      print 'Not running as root - run again with sudo'
+      return False
 
-  if not parsed_args.install:
-    # TODO(benvanik): prettier output
-    for dependency in dependencies:
-      print dependency
-    return True
-
-  # TODO(benvanik): check if running as root
-  running_as_root = False
-  if parsed_args.install and not running_as_root:
-    print 'Not running as root - run again with sudo'
-    return False
-
-  return dep_manager.install_all(dependencies)
+    result = dep_manager.install_all(dependencies)
+    return 0 if result else 1

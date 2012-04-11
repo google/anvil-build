@@ -15,28 +15,27 @@ import os
 import sys
 
 import anvil.commands.util as commandutil
-from anvil.manage import manage_command
+from anvil.manage import ManageCommand
 
 
-def _get_options_parser():
-  """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('anvil test', __doc__)
+class TestCommand(ManageCommand):
+  def __init__(self):
+    super(TestCommand, self).__init__(
+        name='test',
+        help_short='Builds and runs test rules.',
+        help_long=__doc__)
 
-  # Add all common args
-  commandutil.add_common_build_args(parser, targets=True)
+  def create_argument_parser(self):
+    parser = super(TestCommand, self).create_argument_parser()
 
-  # 'test' specific
+    # Add all common args
+    self._add_common_build_arguments(parser, targets=True)
 
-  return parser
+    return parser
 
+  def execute(self, args, cwd):
+    (result, all_target_outputs) = commandutil.run_build(cwd, args)
 
-@manage_command('test', 'Builds and runs test rules.')
-def test(args, cwd):
-  parser = _get_options_parser()
-  parsed_args = parser.parse_args(args)
+    print all_target_outputs
 
-  (result, all_target_outputs) = commandutil.run_build(cwd, parsed_args)
-
-  print all_target_outputs
-
-  return result
+    return 0 if result else 1

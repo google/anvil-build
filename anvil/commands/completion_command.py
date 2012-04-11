@@ -20,8 +20,7 @@ import io
 import os
 import sys
 
-import anvil.commands.util as commandutil
-from anvil.manage import manage_command
+from anvil.manage import ManageCommand
 
 
 class _ShellCompletion(object):
@@ -89,46 +88,50 @@ _COMPLETIONS = {
     }
 
 
-def _get_options_parser():
-  """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('anvil completion', __doc__)
+class CompletionCommand(ManageCommand):
+  def __init__(self):
+    super(CompletionCommand, self).__init__(
+        name='completion',
+        help_short='Provides scripts to enable shell completion.',
+        help_long=__doc__)
 
-  # 'completion' specific
-  parser.add_argument('--install',
-                      dest='install',
-                      action='store_true',
-                      default=False,
-                      help=('Install the completion script to the global path, '
-                            'such as /etc/bash_completion.d/'))
-  parser.add_argument('--bash',
-                      dest='shell',
-                      action='store_const',
-                      const='bash',
-                      help=('Generate completion code for bash.'))
-  # TODO(benvanik): other shells? are there even any others that people use?
+  def create_argument_parser(self):
+    parser = super(CompletionCommand, self).create_argument_parser()
 
-  return parser
+    # 'completion' specific
+    parser.add_argument('--install',
+                        dest='install',
+                        action='store_true',
+                        default=False,
+                        help=('Install the completion script to the global '
+                              'path, such as /etc/bash_completion.d/'))
+    parser.add_argument('--bash',
+                        dest='shell',
+                        action='store_const',
+                        const='bash',
+                        help=('Generate completion code for bash.'))
+    # TODO(benvanik): other shells? are there even any others that people use?
 
+    return parser
 
-@manage_command('completion', 'Provides scripts to enable shell completion.')
-def completion(args, cwd):
-  parser = _get_options_parser()
-  parsed_args = parser.parse_args(args)
+  def execute(self, args, cwd):
+    if not args.shell:
+      parser.print_help()
+      print '\nerror: please specify a shell (such as --bash)'
+      return 1
 
-  if not parsed_args.shell:
-    parser.print_help()
-    print '\nerror: please specify a shell (such as --bash)'
-    return False
+    if not _COMPLETIONS.has_key(args.shell):
+      parser.print_help()
+      print '\nerror: shell environment "%s" not supported' % (args.shell)
+      return 1
 
-  if not _COMPLETIONS.has_key(parsed_args.shell):
-    parser.print_help()
-    print '\nerror: shell environment "%s" not supported' % (parsed_args.shell)
-    return False
+    completion = _COMPLETIONS[args.shell]
+    if args.install:
+      if completion.install():
+        return 0
+      else:
+        return 1
+    else:
+      print completion.get_profile_string()
 
-  completion = _COMPLETIONS[parsed_args.shell]
-  if parsed_args.install:
-    return completion.install()
-  else:
-    print completion.get_profile_string()
-
-  return True
+    return 0

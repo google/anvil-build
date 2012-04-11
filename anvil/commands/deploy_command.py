@@ -25,70 +25,71 @@ import shutil
 import sys
 
 import anvil.commands.util as commandutil
-from anvil.manage import manage_command
+from anvil.manage import ManageCommand
 
 
-def _get_options_parser():
-  """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('anvil deploy', __doc__)
+class DeployCommand(ManageCommand):
+  def __init__(self):
+    super(DeployCommand, self).__init__(
+        name='deploy',
+        help_short='Builds and copies output to a target path.',
+        help_long=__doc__)
 
-  # Add all common args
-  commandutil.add_common_build_args(parser, targets=True)
+  def create_argument_parser(self):
+    parser = super(DeployCommand, self).create_argument_parser()
 
-  # 'deploy' specific
-  parser.add_argument('-o', '--output',
-                      dest='output',
-                      required=True,
-                      help=('Output path to place all results. Will be created '
-                            ' if it does not exist.'))
-  parser.add_argument('-c', '--clean',
-                      dest='clean',
-                      action='store_true',
-                      help=('Whether to remove all output files before '
-                            'deploying.'))
+    # Add all common args
+    self._add_common_build_arguments(parser, targets=True)
 
-  return parser
+    # 'deploy' specific
+    parser.add_argument('-o', '--output',
+                        dest='output',
+                        required=True,
+                        help=('Output path to place all results. Will be '
+                              'created if it does not exist.'))
+    parser.add_argument('-c', '--clean',
+                        dest='clean',
+                        action='store_true',
+                        help=('Whether to remove all output files before '
+                              'deploying.'))
 
+    return parser
 
-@manage_command('deploy', 'Builds and copies output to a target path.')
-def deploy(args, cwd):
-  parser = _get_options_parser()
-  parsed_args = parser.parse_args(args)
+  def execute(self, args, cwd):
+    # Build everything first
+    (result, all_target_outputs) = commandutil.run_build(cwd, parsed_args)
+    if not result:
+      # Failed - don't copy anything
+      return False
 
-  # Build everything first
-  (result, all_target_outputs) = commandutil.run_build(cwd, parsed_args)
-  if not result:
-    # Failed - don't copy anything
-    return False
+    # Delete output, if desired
+    if parsed_args.clean:
+      shutil.rmtree(parsed_args.output)
 
-  # Delete output, if desired
-  if parsed_args.clean:
-    shutil.rmtree(parsed_args.output)
+    # Ensure output exists
+    if not os.path.isdir(parsed_args.output):
+      os.makedirs(parsed_args.output)
 
-  # Ensure output exists
-  if not os.path.isdir(parsed_args.output):
-    os.makedirs(parsed_args.output)
+    # Copy results
+    for target_output in all_target_outputs:
+      # Get path relative to root
+      # This will contain the build-out/ etc
+      rel_path = os.path.relpath(target_output, cwd)
 
-  # Copy results
-  for target_output in all_target_outputs:
-    # Get path relative to root
-    # This will contain the build-out/ etc
-    rel_path = os.path.relpath(target_output, cwd)
+      # Strip the build-*/
+      rel_path = os.path.join(*(rel_path.split(os.sep)[1:]))
 
-    # Strip the build-*/
-    rel_path = os.path.join(*(rel_path.split(os.sep)[1:]))
+      # Make output path
+      deploy_path = os.path.normpath(os.path.join(parsed_args.output, rel_path))
 
-    # Make output path
-    deploy_path = os.path.normpath(os.path.join(parsed_args.output, rel_path))
+      # Ensure directory exists
+      # TODO(benvanik): cache whether we have checked yet to reduce OS cost
+      deploy_dir = os.path.dirname(deploy_path)
+      if not os.path.isdir(deploy_dir):
+        os.makedirs(deploy_dir)
 
-    # Ensure directory exists
-    # TODO(benvanik): cache whether we have checked yet to reduce OS cost
-    deploy_dir = os.path.dirname(deploy_path)
-    if not os.path.isdir(deploy_dir):
-      os.makedirs(deploy_dir)
+      # Copy!
+      print '%s -> %s' % (target_output, deploy_path)
+      shutil.copy2(target_output, deploy_path)
 
-    # Copy!
-    print '%s -> %s' % (target_output, deploy_path)
-    shutil.copy2(target_output, deploy_path)
-
-  return result
+    return 0 if result else 1

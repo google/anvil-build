@@ -12,21 +12,20 @@ import shutil
 import sys
 
 import anvil.commands.util as commandutil
-from anvil.manage import manage_command
+from anvil.manage import ManageCommand
 
 
-def _get_options_parser():
-  """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('anvil clean', __doc__)
+class CleanCommand(ManageCommand):
+  def __init__(self):
+    super(CleanCommand, self).__init__(
+        name='clean',
+        help_short='Cleans outputs and caches.',
+        help_long=__doc__)
 
-  # 'clean' specific
+  def create_argument_parser(self):
+    parser = super(CleanCommand, self).create_argument_parser()
+    return parser
 
-  return parser
-
-
-@manage_command('clean', 'Cleans outputs and caches.')
-def clean(args, cwd):
-  parser = _get_options_parser()
-  parsed_args = parser.parse_args(args)
-
-  return commandutil.clean_output(cwd)
+  def execute(self, args, cwd):
+    result = commandutil.clean_output(cwd)
+    return 0 if result else 1

@@ -299,7 +299,7 @@ def _emit_rule(rule):
 
 class build_rule(object):
   """A decorator for build rule classes.
-  Use this to register build rule classes. A class decorated wtih this will be
+  Use this to register build rule classes. A class decorated with this will be
   exposed to modules with the given rule_name. It should be callable and, on
   call, use emit_rule to emit a new rule.
   """

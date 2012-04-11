@@ -21,24 +21,22 @@ class ManageTest(FixtureTestCase):
   """Behavioral tests for the management wrapper."""
   fixture = 'manage'
 
-  def testDecorator(self):
-    @manage_command('command_1')
-    def command_1(args, cwd):
-      return 0
-    self.assertEqual(command_1.command_name, 'command_1')
-
   def testDiscovery(self):
     # Check built-in
     commands = manage.discover_commands()
     self.assertTrue(commands.has_key('build'))
-    self.assertIsInstance(commands['build'], types.FunctionType)
+    self.assertIsInstance(commands['build'], ManageCommand)
 
     # Check custom
     commands = manage.discover_commands(
         os.path.join(self.root_path, 'commands'))
     self.assertTrue(commands.has_key('test_command'))
-    self.assertIsInstance(commands['test_command'], types.FunctionType)
-    self.assertEqual(commands['test_command']([], ''), 123)
+    test_command = commands['test_command']
+    self.assertIsInstance(test_command, ManageCommand)
+    args = test_command.create_argument_parser()
+    parsed_args = args.parse_args([])
+    cwd = os.getcwd()
+    self.assertEqual(commands['test_command'].execute(parsed_args, cwd), 123)
 
     # Duplicate command names/etc
     with self.assertRaises(KeyError):
@@ -54,12 +52,13 @@ class ManageTest(FixtureTestCase):
     with self.assertRaises(ValueError):
       manage.run_command(['xxx'])
 
-    def some_command(args, cwd):
-      self.assertEqual(len(args), 0)
-      self.assertNotEqual(len(cwd), 0)
-      return 123
+    class SomeCommand(ManageCommand):
+      def __init__(self):
+        super(SomeCommand, self).__init__(name='some_command')
+      def execute(self, args, cwd):
+        return 123
     self.assertEqual(manage.run_command(
-        ['some_command'], commands={'some_command': some_command}), 123)
+        ['some_command'], commands={'some_command': SomeCommand()}), 123)
 
 
 if __name__ == '__main__':

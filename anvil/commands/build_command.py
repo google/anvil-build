@@ -13,38 +13,39 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
 import anvil.commands.util as commandutil
-from anvil.manage import manage_command
+from anvil.manage import ManageCommand
 
 
-def _get_options_parser():
-  """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('anvil build', __doc__)
+class BuildCommand(ManageCommand):
+  def __init__(self):
+    super(BuildCommand, self).__init__(
+        name='build',
+        help_short='Builds target rules.',
+        help_long=__doc__)
 
-  # Add all common args
-  commandutil.add_common_build_args(parser, targets=True)
+  def create_argument_parser(self):
+    parser = super(BuildCommand, self).create_argument_parser()
 
-  # 'build' specific
-  parser.add_argument('--rebuild',
-                      dest='rebuild',
-                      action='store_true',
-                      default=False,
-                      help=('Cleans all output and caches before building.'))
+    # Add all common args
+    self._add_common_build_arguments(parser, targets=True)
 
-  return parser
+    # 'build' specific
+    parser.add_argument('--rebuild',
+                        dest='rebuild',
+                        action='store_true',
+                        default=False,
+                        help=('Cleans all output and caches before building.'))
 
+    return parser
 
-@manage_command('build', 'Builds target rules.')
-def build(args, cwd):
-  parser = _get_options_parser()
-  parsed_args = parser.parse_args(args)
+  def execute(self, args, cwd):
+    # Handle --rebuild
+    if args.rebuild:
+      if not commandutil.clean_output(cwd):
+        return False
 
-  # Handle --rebuild
-  if parsed_args.rebuild:
-    if not commandutil.clean_output(cwd):
-      return False
+    (result, all_target_outputs) = commandutil.run_build(cwd, args)
 
-  (result, all_target_outputs) = commandutil.run_build(cwd, parsed_args)
+    print all_target_outputs
 
-  print all_target_outputs
-
-  return result
+    return 0 if result else 1

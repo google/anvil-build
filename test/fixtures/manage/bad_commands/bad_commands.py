@@ -1,12 +1,11 @@
-from anvil.manage import manage_command
+from anvil.manage import ManageCommand
 
 
-@manage_command('test_command')
-def test_command(args, cwd):
-  return 0
+class TestCommand(ManageCommand):
+  def __init__(self):
+    super(TestCommand, self).__init__(name='test_command')
 
 
-# Duplicate name
-@manage_command('test_command')
-def test_command1(args, cwd):
-  return 0
+class TestCommand1(ManageCommand):
+  def __init__(self):
+    super(TestCommand1, self).__init__(name='test_command')

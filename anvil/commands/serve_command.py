@@ -31,28 +31,34 @@ import os
 import sys
 
 import anvil.commands.util as commandutil
-from anvil.manage import manage_command
+from anvil.manage import ManageCommand
 
 
-def _get_options_parser():
-  """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('anvil serve', __doc__)
+class ServeCommand(ManageCommand):
+  def __init__(self):
+    super(ServeCommand, self).__init__(
+        name='serve',
+        help_short='Continuously builds and serves targets.',
+        help_long=__doc__)
 
-  # Add all common args
-  commandutil.add_common_build_args(parser, targets=True)
+  def create_argument_parser(self):
+    parser = super(ServeCommand, self).create_argument_parser()
 
-  # 'serve' specific
+    # Add all common args
+    self._add_common_build_arguments(parser, targets=True)
 
-  return parser
+    # 'serve' specific
 
+    return parser
 
-@manage_command('serve', 'Continuously builds and serves targets.')
-def serve(args, cwd):
-  parser = _get_options_parser()
-  parsed_args = parser.parse_args(args)
+  def execute(self, args, cwd):
+    # Handle --rebuild
+    if args.rebuild:
+      if not commandutil.clean_output(cwd):
+        return False
 
-  (result, all_target_outputs) = commandutil.run_build(cwd, parsed_args)
+    (result, all_target_outputs) = commandutil.run_build(cwd, args)
 
-  print all_target_outputs
+    print all_target_outputs
 
-  return result
+    return 0 if result else 1
