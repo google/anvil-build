@@ -11,8 +11,8 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 import os
 import unittest2
 
-from rule import *
-from test import FixtureTestCase
+from anvil.rule import *
+from anvil.test import FixtureTestCase
 
 
 class RuleTest(unittest2.TestCase):

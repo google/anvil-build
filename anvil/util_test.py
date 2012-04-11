@@ -10,7 +10,7 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 
 import unittest2
 
-import util
+from anvil import util
 
 
 class IsRulePathTest(unittest2.TestCase):

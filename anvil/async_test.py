@@ -10,8 +10,8 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 
 import unittest2
 
-from async import Deferred, gather_deferreds
-from test import AsyncTestCase
+from anvil.async import Deferred, gather_deferreds
+from anvil.test import AsyncTestCase
 
 
 class DeferredTest(unittest2.TestCase):

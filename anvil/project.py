@@ -16,9 +16,9 @@ import re
 import stat
 import string
 
-from module import ModuleLoader
-from rule import RuleNamespace
-import util
+from anvil.module import ModuleLoader
+from anvil.rule import RuleNamespace
+from anvil import util
 
 
 class Project(object):

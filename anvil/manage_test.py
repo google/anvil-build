@@ -11,10 +11,10 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 import types
 import unittest2
 
-import manage
-import test
-from manage import *
-from test import AsyncTestCase, FixtureTestCase
+from anvil import manage
+from anvil.manage import *
+from anvil import test
+from anvil.test import AsyncTestCase, FixtureTestCase
 
 
 class ManageTest(FixtureTestCase):

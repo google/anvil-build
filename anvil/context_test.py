@@ -11,13 +11,13 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 import os
 import unittest2
 
-import async
-from context import *
-from module import *
-from rule import *
-from project import *
-from task import *
-from test import AsyncTestCase, FixtureTestCase
+from anvil import async
+from anvil.context import *
+from anvil.module import *
+from anvil.rule import *
+from anvil.project import *
+from anvil.task import *
+from anvil.test import AsyncTestCase, FixtureTestCase
 
 
 class BuildEnvironmentTest(FixtureTestCase):

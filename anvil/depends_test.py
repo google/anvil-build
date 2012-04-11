@@ -11,7 +11,7 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 import os
 import unittest2
 
-from depends import *
+from anvil.depends import *
 
 
 class DependencyTest(unittest2.TestCase):

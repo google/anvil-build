@@ -20,8 +20,8 @@ import glob2
 import io
 import os
 
-import rule
-from rule import RuleNamespace
+import anvil.rule
+from anvil.rule import RuleNamespace
 
 
 class Module(object):
@@ -170,7 +170,7 @@ class ModuleLoader(object):
       NameError: A function or variable name was not found.
     """
     all_rules = None
-    rule.begin_capturing_emitted_rules()
+    anvil.rule.begin_capturing_emitted_rules()
     try:
       # Setup scope
       scope = {}
@@ -180,7 +180,7 @@ class ModuleLoader(object):
       # Execute!
       exec self.code_obj in scope
     finally:
-      all_rules = rule.end_capturing_emitted_rules()
+      all_rules = anvil.rule.end_capturing_emitted_rules()
 
     # Gather rules and build the module
     module = Module(self.path)

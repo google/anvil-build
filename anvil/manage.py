@@ -16,7 +16,9 @@ import os
 import re
 import sys
 
-import util
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), '..'))
+
+from anvil import util
 
 
 # Hack to get formatting in usage() correct
@@ -42,6 +44,7 @@ class ManageCommand(object):
     self.name = name
     self.help_short = help_short
     self.help_long = help_long
+    self.completion_hints = []
 
   def create_argument_parser(self):
     """Creates and sets up an argument parser.
@@ -104,13 +107,13 @@ class ManageCommand(object):
     return 1
 
 
-def discover_commands(search_path=None):
+def discover_commands(search_paths=None):
   """Looks for all commands and returns a dictionary of them.
   Commands are discovered in the given search path (or anvil/commands/) by
   looking for subclasses of ManageCommand.
 
   Args:
-    search_path: Search path to use instead of the default.
+    search_paths: Search paths to use for command discovery.
 
   Returns:
     A dictionary containing name-to-ManageCommand mappings.
@@ -118,25 +121,25 @@ def discover_commands(search_path=None):
   Raises:
     KeyError: Multiple commands have the same name.
   """
+  if not search_paths:
+    search_paths = [os.path.join(anvil.util.get_anvil_path(), 'commands')]
   commands = {}
-  if not search_path:
-    commands_path = os.path.join(util.get_anvil_path(), 'commands')
-  else:
-    commands_path = search_path
-  for (root, dirs, files) in os.walk(commands_path):
-    for name in files:
-      if fnmatch.fnmatch(name, '*.py'):
-        full_path = os.path.join(root, name)
-        module = imp.load_source(os.path.splitext(name)[0], full_path)
-        for attr_name in dir(module):
-          command_cls = getattr(module, attr_name)
-          # HACK(benvanik): remove this hack after module naming is cleaned up
-          # if (isinstance(command_cls, type) and
-          #     issubclass(command_cls, ManageCommand)):
-          if isinstance(command_cls, type):
-            import anvil.manage
-            if (command_cls != anvil.manage.ManageCommand and
-                issubclass(command_cls, anvil.manage.ManageCommand)):
+  for search_path in search_paths:
+    for (root, dirs, files) in os.walk(search_path):
+      for name in files:
+        if fnmatch.fnmatch(name, '*.py'):
+          full_path = os.path.join(root, name)
+          module = imp.load_source(os.path.splitext(name)[0], full_path)
+          for attr_name in dir(module):
+            command_cls = getattr(module, attr_name)
+            # HACK(benvanik): remove this hack after module naming is cleaned up
+            if (command_cls != ManageCommand and
+                isinstance(command_cls, type) and
+                issubclass(command_cls, ManageCommand)):
+            # if isinstance(command_cls, type):
+            #   import anvil.manage
+            #   if (command_cls != anvil.manage.ManageCommand and
+            #       issubclass(command_cls, anvil.manage.ManageCommand)):
               command = command_cls()
               command_name = command.name
               if commands.has_key(command_name):
@@ -326,6 +329,7 @@ def main(): # pragma: no cover
 
 
 if __name__ == '__main__':
+  import anvil.manage
   # Always add anvil/.. to the path
   sys.path.insert(1, os.path.join(util.get_anvil_path(), '..'))
-  main()
+  anvil.manage.main()

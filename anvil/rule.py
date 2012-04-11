@@ -17,8 +17,8 @@ import pickle
 import re
 import sys
 
-import util
-import version
+from anvil import util
+from anvil import version
 
 
 class Rule(object):

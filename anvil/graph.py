@@ -12,8 +12,8 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 
 import networkx as nx
 
-import project
-import util
+from anvil import project
+from anvil import util
 
 
 class RuleGraph(object):

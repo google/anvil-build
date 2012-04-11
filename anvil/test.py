@@ -13,7 +13,7 @@ import shutil
 import sys
 import unittest2
 
-import util
+from anvil import util
 
 
 def main():

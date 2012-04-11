@@ -13,7 +13,7 @@ import subprocess
 import sys
 import time
 
-from async import Deferred
+from anvil.async import Deferred
 
 
 class Task(object):

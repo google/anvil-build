@@ -10,10 +10,10 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 
 import unittest2
 
-from graph import *
-from module import *
-from rule import *
-from project import *
+from anvil.graph import *
+from anvil.module import *
+from anvil.rule import *
+from anvil.project import *
 
 
 class RuleGraphTest(unittest2.TestCase):

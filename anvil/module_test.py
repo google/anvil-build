@@ -12,9 +12,9 @@ import glob2
 import os
 import unittest2
 
-from module import *
-from rule import *
-from test import FixtureTestCase
+from anvil.module import *
+from anvil.rule import *
+from anvil.test import FixtureTestCase
 
 
 class ModuleTest(unittest2.TestCase):

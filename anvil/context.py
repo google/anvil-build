@@ -15,12 +15,12 @@ import multiprocessing
 import os
 import stat
 
-import async
-from async import Deferred
-import graph
-import project
-import task
-import util
+from anvil import async
+from anvil.async import Deferred
+from anvil import graph
+from anvil import project
+from anvil import task
+from anvil import util
 
 
 class Status:
