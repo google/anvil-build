@@ -17,7 +17,7 @@ from anvil.manage import manage_command
 
 def _get_options_parser():
   """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('manage.py clean', __doc__)
+  parser = commandutil.create_argument_parser('anvil clean', __doc__)
 
   # 'clean' specific
 

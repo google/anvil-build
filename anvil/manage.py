@@ -78,7 +78,7 @@ def usage(commands):
   Returns:
     A string containing usage info and a command listing.
   """
-  s = 'manage.py command [-h]\n'
+  s = 'anvil command [-h]\n'
   s += '\n'
   s += 'Commands:\n'
   command_names = commands.keys()

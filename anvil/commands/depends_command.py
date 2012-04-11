@@ -14,9 +14,9 @@ TODO(benvanik): it'd be nice to support * syntax or some way to say 'everything'
 
 Example:
 # Check dependencies and print results for rule :some_rule
-manage.py depends :some_rule
+anvil depends :some_rule
 # Install/update all dependencies for rule :some_rule
-manage.py depends --install :some_rule
+anvil depends --install :some_rule
 """
 
 __author__ = 'benvanik@google.com (Ben Vanik)'
@@ -33,7 +33,7 @@ from anvil.manage import manage_command
 
 def _get_options_parser():
   """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('manage.py depends', __doc__)
+  parser = commandutil.create_argument_parser('anvil depends', __doc__)
 
   # Add all common args
 

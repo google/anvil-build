@@ -12,9 +12,9 @@ unoptimized/uncompiled vs. optimized/packed.
 
 Examples:
 # Copy all output files of :release_all to /some/bin/, merging the output
-manage.py deploy --output=/some/bin/ :release_all
+anvil deploy --output=/some/bin/ :release_all
 # Clean (aka delete) /some/bin/ before doing the copy
-manage.py deploy --clean --output=/some/bin/ :release_all
+anvil deploy --clean --output=/some/bin/ :release_all
 """
 
 __author__ = 'benvanik@google.com (Ben Vanik)'
@@ -30,7 +30,7 @@ from anvil.manage import manage_command
 
 def _get_options_parser():
   """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('manage.py deploy', __doc__)
+  parser = commandutil.create_argument_parser('anvil deploy', __doc__)
 
   # Add all common args
   commandutil.add_common_build_args(parser, targets=True)

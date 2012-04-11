@@ -17,11 +17,11 @@ rules specified in deps.
 
 Examples:
 # Simple HTTP server
-manage.py serve
-manage.py serve --http_port=8080
+anvil serve
+anvil serve --http_port=8080
 # HTTP server + build daemon
-manage.py serve :some_daemon
-manage.py serve --http_port=8080 --daemon_port=8081 :some_daemon
+anvil serve :some_daemon
+anvil serve --http_port=8080 --daemon_port=8081 :some_daemon
 """
 
 __author__ = 'benvanik@google.com (Ben Vanik)'
@@ -36,7 +36,7 @@ from anvil.manage import manage_command
 
 def _get_options_parser():
   """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('manage.py serve', __doc__)
+  parser = commandutil.create_argument_parser('anvil serve', __doc__)
 
   # Add all common args
   commandutil.add_common_build_args(parser, targets=True)

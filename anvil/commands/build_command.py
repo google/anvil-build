@@ -4,9 +4,9 @@
 
 Examples:
 # Build the given rules
-manage.py build :some_rule some/path:another_rule
-# Force a full rebuild (essentially a 'manage.py clean')
-manage.py build --rebuild :some_rule
+anvil build :some_rule some/path:another_rule
+# Force a full rebuild (essentially a 'anvil clean')
+anvil build --rebuild :some_rule
 """
 
 __author__ = 'benvanik@google.com (Ben Vanik)'
@@ -18,7 +18,7 @@ from anvil.manage import manage_command
 
 def _get_options_parser():
   """Gets an options parser for the given args."""
-  parser = commandutil.create_argument_parser('manage.py build', __doc__)
+  parser = commandutil.create_argument_parser('anvil build', __doc__)
 
   # Add all common args
   commandutil.add_common_build_args(parser, targets=True)
