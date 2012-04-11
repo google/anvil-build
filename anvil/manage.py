@@ -132,7 +132,7 @@ def run_command(args=None, cwd=None, commands=None):
   return command_fn(args[1:], cwd)
 
 
-def autocomplete(words, cword, cwd):
+def autocomplete(words, cword, cwd, commands=None):
   """Completes the given command string.
 
   Args:
@@ -147,7 +147,7 @@ def autocomplete(words, cword, cwd):
   """
   # TODO(benvanik): if a command is specified try loading it first - may be
   #     able to avoid searching all commands
-  commands = discover_commands()
+  commands = commands if commands else discover_commands()
 
   try:
     current = words[cword]
@@ -222,21 +222,25 @@ def main(): # pragma: no cover
   # Always add anvil/.. to the path
   sys.path.insert(1, util.get_anvil_path())
 
+  commands = discover_commands()
+
   # Run auto-completion logic
   if 'ANVIL_AUTO_COMPLETE' in os.environ:
     match_str = autocomplete(
         words=os.environ['COMP_WORDS'].split(' ')[1:],
         cword=int(os.environ['COMP_CWORD']) - 1,
-        cwd=os.getcwd())
+        cwd=os.getcwd(),
+        commands=commands)
     if match_str and len(match_str):
       print match_str
     sys.exit(1)
 
   try:
     return_code = run_command(args=sys.argv[1:],
-                              cwd=os.getcwd())
+                              cwd=os.getcwd(),
+                              commands=commands)
   except ValueError:
-    print usage()
+    print usage(commands)
     return_code = 1
   except Exception as e:
     #print e
