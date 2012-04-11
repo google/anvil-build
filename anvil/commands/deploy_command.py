@@ -34,6 +34,11 @@ class DeployCommand(ManageCommand):
         name='deploy',
         help_short='Builds and copies output to a target path.',
         help_long=__doc__)
+    self._add_common_build_hints()
+    self.completion_hints.extend([
+        '-o', '--output',
+        '-c', '--clean',
+        ])
 
   def create_argument_parser(self):
     parser = super(DeployCommand, self).create_argument_parser()

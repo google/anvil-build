@@ -21,15 +21,19 @@ class ManageTest(FixtureTestCase):
   """Behavioral tests for the management wrapper."""
   fixture = 'manage'
 
+  def setUp(self):
+    super(ManageTest, self).setUp()
+
   def testDiscovery(self):
     # Check built-in
-    commands = manage.discover_commands()
+    search_paths = [os.path.join(util.get_anvil_path(), 'commands')]
+    commands = manage.discover_commands(search_paths)
     self.assertTrue(commands.has_key('build'))
     self.assertIsInstance(commands['build'], ManageCommand)
 
     # Check custom
     commands = manage.discover_commands(
-        os.path.join(self.root_path, 'commands'))
+        [os.path.join(self.root_path, 'commands')])
     self.assertTrue(commands.has_key('test_command'))
     test_command = commands['test_command']
     self.assertIsInstance(test_command, ManageCommand)
@@ -40,25 +44,30 @@ class ManageTest(FixtureTestCase):
 
     # Duplicate command names/etc
     with self.assertRaises(KeyError):
-      manage.discover_commands(os.path.join(self.root_path, 'bad_commands'))
+      manage.discover_commands([os.path.join(self.root_path, 'bad_commands')])
 
   def testUsage(self):
-    commands = manage.discover_commands()
+    search_paths = [os.path.join(util.get_anvil_path(), 'commands')]
+    commands = manage.discover_commands(search_paths)
     self.assertNotEqual(len(manage.usage(commands)), 0)
 
-  def testMain(self):
-    with self.assertRaises(ValueError):
-      manage.run_command()
-    with self.assertRaises(ValueError):
-      manage.run_command(['xxx'])
-
+  def testRunCommand(self):
     class SomeCommand(ManageCommand):
       def __init__(self):
         super(SomeCommand, self).__init__(name='some_command')
       def execute(self, args, cwd):
         return 123
     self.assertEqual(manage.run_command(
-        ['some_command'], commands={'some_command': SomeCommand()}), 123)
+        SomeCommand(), [], os.getcwd()), 123)
+
+    # TODO(benvanik): add test for argument parsing
+
+  def testAutocomplete(self):
+    # TODO(benvanik): test autocomplete
+    pass
+
+  def testMain(self):
+    pass
 
 
 if __name__ == '__main__':

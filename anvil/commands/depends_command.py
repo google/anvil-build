@@ -36,6 +36,10 @@ class DependsCommand(ManageCommand):
         name='depends',
         help_short='Manages external rule type dependencies.',
         help_long=__doc__)
+    self.completion_hints.extend([
+        '-i', '--install',
+        '--stop_on_error',
+        ])
 
   def create_argument_parser(self):
     parser = super(DependsCommand, self).create_argument_parser()

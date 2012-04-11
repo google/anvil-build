@@ -24,6 +24,7 @@ class TestCommand(ManageCommand):
         name='test',
         help_short='Builds and runs test rules.',
         help_long=__doc__)
+    self._add_common_build_hints()
 
   def create_argument_parser(self):
     parser = super(TestCommand, self).create_argument_parser()

@@ -22,6 +22,10 @@ class BuildCommand(ManageCommand):
         name='build',
         help_short='Builds target rules.',
         help_long=__doc__)
+    self._add_common_build_hints()
+    self.completion_hints.extend([
+        '--rebuild',
+        ])
 
   def create_argument_parser(self):
     parser = super(BuildCommand, self).create_argument_parser()

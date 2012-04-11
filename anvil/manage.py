@@ -58,6 +58,13 @@ class ManageCommand(object):
     # TODO(benvanik): add common arguments (logging levels/etc)
     return parser
 
+  def _add_common_build_hints(self):
+    self.completion_hints.extend([
+        '-j', '--jobs',
+        '-f', '--force',
+        '--stop_on_error',
+        ])
+
   def _add_common_build_arguments(self, parser, targets=False):
     """Adds common build arguments to an argument parser.
 
@@ -107,7 +114,7 @@ class ManageCommand(object):
     return 1
 
 
-def discover_commands(search_paths=None):
+def discover_commands(search_paths):
   """Looks for all commands and returns a dictionary of them.
   Commands are discovered in the given search path (or anvil/commands/) by
   looking for subclasses of ManageCommand.
@@ -121,8 +128,6 @@ def discover_commands(search_paths=None):
   Raises:
     KeyError: Multiple commands have the same name.
   """
-  if not search_paths:
-    search_paths = [os.path.join(anvil.util.get_anvil_path(), 'commands')]
   commands = {}
   for search_path in search_paths:
     for (root, dirs, files) in os.walk(search_path):
@@ -132,14 +137,9 @@ def discover_commands(search_paths=None):
           module = imp.load_source(os.path.splitext(name)[0], full_path)
           for attr_name in dir(module):
             command_cls = getattr(module, attr_name)
-            # HACK(benvanik): remove this hack after module naming is cleaned up
             if (command_cls != ManageCommand and
                 isinstance(command_cls, type) and
                 issubclass(command_cls, ManageCommand)):
-            # if isinstance(command_cls, type):
-            #   import anvil.manage
-            #   if (command_cls != anvil.manage.ManageCommand and
-            #       issubclass(command_cls, anvil.manage.ManageCommand)):
               command = command_cls()
               command_name = command.name
               if commands.has_key(command_name):
@@ -148,7 +148,7 @@ def discover_commands(search_paths=None):
   return commands
 
 
-def usage(commands=None):
+def usage(commands):
   """Gets usage info that can be displayed to the user.
 
   Args:
@@ -157,8 +157,6 @@ def usage(commands=None):
   Returns:
     A string containing usage info and a command listing.
   """
-  commands = commands if commands else discover_commands()
-
   s = 'anvil command [-h]\n'
   s += '\n'
   s += 'Commands:\n'
@@ -172,14 +170,13 @@ def usage(commands=None):
   return s
 
 
-def run_command(args=None, cwd=None, commands=None):
+def run_command(command, args, cwd):
   """Runs a command with the given context.
 
   Args:
-    args: Arguments, with the command to execute as the first.
-    cwd: Current working directory override.
-    commands: A command dictionary from discover_commands to override the
-        defaults.
+    command: ManageCommand to run.
+    args: Arguments, with the app and command name stripped.
+    cwd: Current working directory.
 
   Returns:
     0 if the command succeeded and non-zero otherwise.
@@ -187,28 +184,9 @@ def run_command(args=None, cwd=None, commands=None):
   Raises:
     ValueError: The command could not be found or was not specified.
   """
-  args = args if args else []
-  cwd = cwd if cwd else os.getcwd()
-
-  # TODO(benvanik): if a command is specified try loading it first - may be
-  #     able to avoid searching all commands
-  commands = commands if commands else discover_commands()
-
-  # TODO(benvanik): look for a .anvilrc, load it to find
-  # - extra command search paths
-  # - extra rule search paths
-  # Also check to see if it was specified in args?
-
-  if not len(args):
-    raise ValueError('No command given')
-  command_name = args[0]
-  if not commands.has_key(command_name):
-    raise ValueError('Command "%s" not found' % (command_name))
-
-  command = commands[command_name]
   parser = command.create_argument_parser()
-  parsed_args = parser.parse_args(args[1:])
-  return command.execute(args=parsed_args, cwd=cwd)
+  parsed_args = parser.parse_args(args)
+  return command.execute(parsed_args, cwd)
 
 
 def autocomplete(words, cword, cwd, commands=None):
@@ -224,10 +202,6 @@ def autocomplete(words, cword, cwd, commands=None):
   Returns:
     A space-delimited string of completion words for the current command line.
   """
-  # TODO(benvanik): if a command is specified try loading it first - may be
-  #     able to avoid searching all commands
-  commands = commands if commands else discover_commands()
-
   try:
     current = words[cword]
   except IndexError:
@@ -249,9 +223,10 @@ def autocomplete(words, cword, cwd, commands=None):
   command = commands[words[0]]
 
   if current.startswith('-') or current.startswith('--'):
-    # TODO(benvanik): pull out options from ArgumentParser
-    cs = ['--a', '--b', '-c']
-    return ' '.join([c for c in cs if c.startswith(current)])
+    # TODO(benvanik): argparse is poorly designed and cannot support completion
+    #     easily (it has no way to iterate options)
+    hints = command.completion_hints
+    return ' '.join([c for c in hints if c.startswith(current)])
 
   # Bash treats ':' as a separator and passes in things like 'a:b' as [a,:,b]
   # So, look for current = ':' and prev = ':' to try to find out if we are
@@ -301,7 +276,16 @@ def main(): # pragma: no cover
   # Always add anvil/.. to the path
   sys.path.insert(1, util.get_anvil_path())
 
-  commands = discover_commands()
+  # TODO(benvanik): if a command is specified try loading it first - may be
+  #     able to avoid searching all commands
+  search_paths = [os.path.join(util.get_anvil_path(), 'commands')]
+  # TODO(benvanik): look for a .anvilrc, load it to find
+  # - extra command search paths
+  # - extra rule search paths
+  # Also check to see if it was specified in args?
+
+  # Find all commands
+  commands = discover_commands(search_paths)
 
   # Run auto-completion logic
   if 'ANVIL_AUTO_COMPLETE' in os.environ:
@@ -315,9 +299,16 @@ def main(): # pragma: no cover
     sys.exit(1)
 
   try:
-    return_code = run_command(args=sys.argv[1:],
-                              cwd=os.getcwd(),
-                              commands=commands)
+    if len(sys.argv) < 2:
+      raise ValueError('No command given')
+    command_name = sys.argv[1]
+    if not commands.has_key(command_name):
+      raise ValueError('Command "%s" not found' % (command_name))
+
+    command = commands[command_name]
+    return_code = run_command(command=command,
+                              args=sys.argv[2:],
+                              cwd=os.getcwd())
   except ValueError:
     print usage(commands)
     return_code = 1

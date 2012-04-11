@@ -94,6 +94,10 @@ class CompletionCommand(ManageCommand):
         name='completion',
         help_short='Provides scripts to enable shell completion.',
         help_long=__doc__)
+    self.completion_hints.extend([
+        '--install',
+        '--bash',
+        ])
 
   def create_argument_parser(self):
     parser = super(CompletionCommand, self).create_argument_parser()
@@ -116,12 +120,12 @@ class CompletionCommand(ManageCommand):
 
   def execute(self, args, cwd):
     if not args.shell:
-      parser.print_help()
+      self.create_argument_parser().print_help()
       print '\nerror: please specify a shell (such as --bash)'
       return 1
 
     if not _COMPLETIONS.has_key(args.shell):
-      parser.print_help()
+      self.create_argument_parser().print_help()
       print '\nerror: shell environment "%s" not supported' % (args.shell)
       return 1
 

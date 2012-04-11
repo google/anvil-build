@@ -40,6 +40,7 @@ class ServeCommand(ManageCommand):
         name='serve',
         help_short='Continuously builds and serves targets.',
         help_long=__doc__)
+    self._add_common_build_hints()
 
   def create_argument_parser(self):
     parser = super(ServeCommand, self).create_argument_parser()
