@@ -150,17 +150,17 @@ class PythonExecutableTask(ExecutableTask):
   """
 
   def __init__(self, build_env, script_path, call_args=None, *args, **kwargs):
-  """Initializes an executable task.
+    """Initializes an executable task.
 
-  Args:
-    build_env: The build environment for state.
-    script_path: The name (or full path) of a script to execute.
-    call_args: Arguments to pass to the executable.
-  """
-  executable_name = script_path
-  call_args = call_args if call_args else []
-  super(PythonExecutableTask, self).__init__(build_env, script_path,
-      call_args, *args, **kwargs)
+    Args:
+      build_env: The build environment for state.
+      script_path: The name (or full path) of a script to execute.
+      call_args: Arguments to pass to the executable.
+    """
+    executable_name = script_path
+    call_args = call_args if call_args else []
+    super(PythonExecutableTask, self).__init__(build_env, script_path,
+        call_args, *args, **kwargs)
 
   # TODO(benvanik): detect_python_version
 
