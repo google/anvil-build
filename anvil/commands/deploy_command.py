@@ -62,18 +62,18 @@ class DeployCommand(ManageCommand):
 
   def execute(self, args, cwd):
     # Build everything first
-    (result, all_target_outputs) = commandutil.run_build(cwd, parsed_args)
+    (result, all_target_outputs) = commandutil.run_build(cwd, args)
     if not result:
       # Failed - don't copy anything
       return False
 
     # Delete output, if desired
-    if parsed_args.clean:
-      shutil.rmtree(parsed_args.output)
+    if args.clean:
+      shutil.rmtree(args.output)
 
     # Ensure output exists
-    if not os.path.isdir(parsed_args.output):
-      os.makedirs(parsed_args.output)
+    if not os.path.isdir(args.output):
+      os.makedirs(args.output)
 
     # Copy results
     for target_output in all_target_outputs:
@@ -85,7 +85,7 @@ class DeployCommand(ManageCommand):
       rel_path = os.path.join(*(rel_path.split(os.sep)[1:]))
 
       # Make output path
-      deploy_path = os.path.normpath(os.path.join(parsed_args.output, rel_path))
+      deploy_path = os.path.normpath(os.path.join(args.output, rel_path))
 
       # Ensure directory exists
       # TODO(benvanik): cache whether we have checked yet to reduce OS cost
