@@ -16,8 +16,8 @@ from anvil.rule import Rule, build_rule
 from anvil.task import Task, JavaExecutableTask
 
 
-@build_rule('closure_gss')
-class ClosureGssRule(Rule):
+@build_rule('closure_gss_library')
+class ClosureGssLibraryRule(Rule):
   """A Closure Stylesheets transformed file.
   Uses the Closure Stylesheets compiler to cat/minify input GSS files into a
   single output CSS file.
@@ -57,7 +57,7 @@ class ClosureGssRule(Rule):
       out: Optional output name. If none is provided than the rule name will be
           used.
     """
-    super(ClosureGssRule, self).__init__(name, *args, **kwargs)
+    super(ClosureGssLibraryRule, self).__init__(name, *args, **kwargs)
     self.mode = mode
     self.compiler_jar = compiler_jar
     self._append_dependent_paths([self.compiler_jar])
@@ -75,7 +75,7 @@ class ClosureGssRule(Rule):
 
   class _Context(RuleContext):
     def begin(self):
-      super(ClosureGssRule._Context, self).begin()
+      super(ClosureGssLibraryRule._Context, self).begin()
 
       args = []
       args.extend(self.rule.compiler_flags)
