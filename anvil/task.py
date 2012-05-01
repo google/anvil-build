@@ -99,6 +99,10 @@ class ExecutableTask(Task):
     #     streaming output from the process (for watching progress/etc).
     #     This right now just waits until it exits and grabs everything.
     (stdoutdata, stderrdata) = p.communicate()
+    if len(stdoutdata):
+      print stdoutdata
+    if len(stderrdata):
+      print stderrdata
 
     return_code = p.returncode
     if return_code != 0:

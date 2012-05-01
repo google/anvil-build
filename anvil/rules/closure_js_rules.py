@@ -64,6 +64,9 @@ class ClosureJsLintRule(Rule):
           '--closurized_namespaces=%s' % (namespaces),
           ]
 
+      # TODO(benvanik): only changed paths
+      args.extend(self.src_paths)
+
       d = self._run_task_async(PythonExecutableTask(
           self.build_env, self.rule._command, args))
       # TODO(benvanik): pull out errors?
