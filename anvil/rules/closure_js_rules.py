@@ -9,7 +9,6 @@ closure_js_deps
 closure_js_library
 
 Assumes Closure Linter is installed and on the path.
-Assumes Closure Library is present for deps.js generation.
 """
 
 __author__ = 'benvanik@google.com (Ben Vanik)'
@@ -155,7 +154,6 @@ class ClosureJsDepsRule(Rule):
 
 # TODO(benvanik): support non-closure code
 # TODO(benvanik): support AMD modules
-# TODO(benvanik): support sourcing the compiler JAR
 @build_rule('closure_js_library')
 class ClosureJsLibraryRule(Rule):
   """A Closure compiler JavaScript library.
@@ -202,6 +200,7 @@ class ClosureJsLibraryRule(Rule):
       out: Optional output name.
     """
     super(ClosureJsLibraryRule, self).__init__(name, *args, **kwargs)
+    self.src_filter = '*.js'
     self.mode = mode
     self.compiler_jar = compiler_jar
     self._append_dependent_paths([self.compiler_jar])
@@ -225,7 +224,11 @@ class ClosureJsLibraryRule(Rule):
       super(ClosureJsLibraryRule._Context, self).begin()
 
       args = [
-          '--only_closure_dependencies',
+          '--process_closure_primitives',
+          # TODO(benvanik): wait for fix?
+          # http://code.google.com/p/closure-compiler/issues/detail?id=716
+          #'--only_closure_dependencies',
+          '--manage_closure_dependencies',
           '--generate_exports',
           '--summary_detail_level=3',
           '--warning_level=VERBOSE',
@@ -267,5 +270,3 @@ class ClosureJsLibraryRule(Rule):
       # TODO(benvanik): pull out (stdout, stderr) from result and the exception
       #     to get better error logging
       self._chain(d)
-
-

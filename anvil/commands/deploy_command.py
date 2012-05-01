@@ -69,7 +69,10 @@ class DeployCommand(ManageCommand):
 
     # Delete output, if desired
     if args.clean:
-      shutil.rmtree(args.output)
+      try:
+        shutil.rmtree(args.output)
+      except:
+        pass
 
     # Ensure output exists
     if not os.path.isdir(args.output):
@@ -82,7 +85,10 @@ class DeployCommand(ManageCommand):
       rel_path = os.path.relpath(target_output, cwd)
 
       # Strip the build-*/
-      rel_path = os.path.join(*(rel_path.split(os.sep)[1:]))
+      # TODO(benvanik): a more reliable strip
+      rel_path_parts = rel_path.split(os.sep)
+      if rel_path_parts[0].startswith('build-'):
+        rel_path = os.path.join(*(rel_path_parts[1:]))
 
       # Make output path
       deploy_path = os.path.normpath(os.path.join(args.output, rel_path))
