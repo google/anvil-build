@@ -637,23 +637,32 @@ class RuleContext(object):
     succeeed or fail.
 
     Args:
-      deferred: A Deferred or list of deferreds that will be called back.
+      deferreds: A Deferred or list of deferreds that will be called back.
     """
     deferred = async.gather_deferreds(deferreds, errback_if_any_fail=True)
     def _callback(*args, **kwargs):
       self._succeed()
+    deferred.add_callback_fn(_callback)
+    self._chain_errback(deferred)
+
+  def _chain_errback(self, deferred):
+    """Chains an errback of a deferred to the failure of the rule.
+
+    Args:
+      deferred: A Deferred to listen for.
+    """
     def _errback(*args, **kwargs):
       exception = None
-      for arg in args[0]:
-        if not arg[0]:
-          if len(arg[1]) and isinstance(arg[1][0], Exception):
-            exception = arg[1][0]
-            break
-          exception = arg[2].get('exception', None)
-          if exception:
-            break
+      if len(args):
+        for arg in args[0]:
+          if not arg[0]:
+            if len(arg[1]) and isinstance(arg[1][0], Exception):
+              exception = arg[1][0]
+              break
+            exception = arg[2].get('exception', None)
+            if exception:
+              break
       self._fail(exception=exception)
-    deferred.add_callback_fn(_callback)
     deferred.add_errback_fn(_errback)
 
 

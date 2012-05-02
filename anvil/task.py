@@ -6,6 +6,7 @@
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
+import io
 import multiprocessing
 import os
 import re
@@ -51,6 +52,28 @@ class Task(object):
       A result to pass back to the deferred callback.
     """
     raise NotImplementedError()
+
+
+class WriteFileTask(Task):
+  """A task that writes a string to a file.
+  """
+
+  def __init__(self, build_env, contents, path, *args, **kwargs):
+    """Initializes a file writing task.
+
+    Args:
+      build_env: The build environment for state.
+      contents: File contents, as a string.
+      path: Target file path.
+    """
+    super(WriteFileTask, self).__init__(build_env, *args, **kwargs)
+    self.contents = contents
+    self.path = path
+
+  def execute(self):
+    with io.open(self.path, 'wt') as f:
+      f.write(self.contents)
+    return True
 
 
 class ExecutableError(Exception):
