@@ -48,6 +48,7 @@ class ClosureJsLintRule(Rule):
       namespaces: A list of Closurized namespaces.
     """
     super(ClosureJsLintRule, self).__init__(name, *args, **kwargs)
+    self.src_filter = '*.js'
     self._command = 'gjslint'
     self._extra_args = ['--nobeep',]
     self.namespaces = []
