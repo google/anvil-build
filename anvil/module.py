@@ -132,6 +132,8 @@ class ModuleLoader(object):
     self.code_ast = None
     self.code_obj = None
 
+    self._current_scope = None
+
   def load(self, source_string=None):
     """Loads the module from the given path and prepares it for execution.
 
@@ -174,12 +176,14 @@ class ModuleLoader(object):
     try:
       # Setup scope
       scope = {}
+      self._current_scope = scope
       self.rule_namespace.populate_scope(scope)
       self._add_builtins(scope)
 
       # Execute!
       exec self.code_obj in scope
     finally:
+      self._current_scope = None
       all_rules = anvil.rule.end_capturing_emitted_rules()
 
     # Gather rules and build the module
@@ -194,6 +198,7 @@ class ModuleLoader(object):
       scope: Scope dictionary.
     """
     scope['glob'] = self.glob
+    scope['include_rules'] = self.include_rules
     scope['select_one'] = self.select_one
     scope['select_any'] = self.select_any
     scope['select_many'] = self.select_many
@@ -213,6 +218,26 @@ class ModuleLoader(object):
     base_path = os.path.dirname(self.path)
     glob_path = os.path.join(base_path, expr)
     return list(glob2.iglob(glob_path))
+
+  def include_rules(self, srcs):
+    """Scans the given paths for rules to include.
+    Source strings must currently be file paths. Future versions may support
+    referencing other rules.
+
+    Args:
+      srcs: A list of source strings or a single source string.
+    """
+    base_path = os.path.dirname(self.path)
+    if isinstance(srcs, str):
+      srcs = [srcs]
+    for src in srcs:
+      # TODO(benvanik): support references - requires making the module loader
+      #     reentrant so that the referenced module can be loaded inline
+      src = os.path.normpath(os.path.join(base_path, src))
+      self.rule_namespace.discover_in_file(src)
+
+    # Repopulate the scope so future statements pick up the new rules
+    self.rule_namespace.populate_scope(self._current_scope)
 
   def select_one(self, d, default_value):
     """Selects a single value from the given tuple list based on the current

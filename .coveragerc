@@ -18,4 +18,5 @@ omit =
     /usr/**
     /tmp/**
     /Library/Python/**
+    /System/Library/Frameworks/**
     /private/var/**

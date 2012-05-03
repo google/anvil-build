@@ -276,6 +276,66 @@ class ModuleLoaderTest(FixtureTestCase):
     self.assertEqual(len(rule.srcs), 0)
 
 
+class ModuleLoaderIncludeTest(FixtureTestCase):
+  """Behavioral tests for ModuleLoader include functionality."""
+  fixture = 'custom_rules'
+
+  def testIncludeRulesSingle(self):
+    module_path = os.path.join(self.temp_path, 'custom_rules', 'BUILD')
+
+    rule_namespace = RuleNamespace()
+    loader = ModuleLoader(module_path, rule_namespace=rule_namespace)
+    loader.load(source_string=(
+        'include_rules("rules/some_rules.py")\n'
+        'some_rule(name="a")\n'))
+    module = loader.execute()
+    self.assertEqual(len(module.rule_list()), 1)
+    self.assertIsNotNone(module.get_rule(':a'))
+
+  def testIncludeRulesGlob(self):
+    module_path = os.path.join(self.temp_path, 'custom_rules', 'BUILD')
+
+    rule_namespace = RuleNamespace()
+    loader = ModuleLoader(module_path, rule_namespace=rule_namespace)
+    loader.load(source_string=(
+        'include_rules(glob("rules/**/*_rules.py"))\n'
+        'some_rule(name="a")\n'
+        'other_rule(name="b")\n'))
+    module = loader.execute()
+    self.assertEqual(len(module.rule_list()), 2)
+    self.assertIsNotNone(module.get_rule(':a'))
+    self.assertIsNotNone(module.get_rule(':b'))
+
+  # def testIncludeRulesRef(self):
+  #   module_path = os.path.join(self.temp_path, 'custom_rules', 'BUILD')
+
+  #   rule_namespace = RuleNamespace()
+  #   loader = ModuleLoader(module_path, rule_namespace=rule_namespace)
+  #   loader.load(source_string=(
+  #       'file_set(name="rules", srcs=glob("rules/**/*_rules.py"))\n'
+  #       'include_rules(":rules")\n'
+  #       'some_rule(name="a")\n'
+  #       'other_rule(name="b")\n'))
+  #   module = loader.execute()
+  #   self.assertEqual(len(module.rule_list()), 2)
+  #   self.assertIsNotNone(module.get_rule(':a'))
+  #   self.assertIsNotNone(module.get_rule(':b'))
+
+  # def testIncludeRulesRefOther(self):
+  #   module_path = os.path.join(self.temp_path, 'custom_rules', 'BUILD')
+
+  #   rule_namespace = RuleNamespace()
+  #   loader = ModuleLoader(module_path, rule_namespace=rule_namespace)
+  #   loader.load(source_string=(
+  #       'include_rules("rules:all_rules")\n'
+  #       'some_rule(name="a")\n'
+  #       'other_rule(name="b")\n'))
+  #   module = loader.execute()
+  #   self.assertEqual(len(module.rule_list()), 2)
+  #   self.assertIsNotNone(module.get_rule(':a'))
+  #   self.assertIsNotNone(module.get_rule(':b'))
+
+
 class ModuleLoaderSelectionTest(unittest2.TestCase):
   """Behavioral tests for ModuleLoader selection utilities."""
 

@@ -179,6 +179,7 @@ class RuleNamespace(object):
   def __init__(self):
     """Initializes a rule namespace."""
     self.rule_types = {}
+    self._loaded_files = []
 
   def populate_scope(self, scope):
     """Populates the given scope dictionary with all of the rule types.
@@ -235,23 +236,26 @@ class RuleNamespace(object):
       if not path:
         path = os.path.join(os.path.dirname(__file__), 'rules')
       if os.path.isfile(path):
-        self._discover_in_file(path)
+        self.discover_in_file(path)
       else:
         for (dirpath, dirnames, filenames) in os.walk(path):
           for filename in filenames:
             if fnmatch.fnmatch(filename, '*_rules.py'):
-              self._discover_in_file(os.path.join(dirpath, filename))
+              self.discover_in_file(os.path.join(dirpath, filename))
     except:
       # Restore original types (don't take any of the discovered rules)
       self.rule_types = original_rule_types
       raise
 
-  def _discover_in_file(self, path):
+  def discover_in_file(self, path):
     """Loads the given python file to add all of its rules.
 
     Args:
       path: Python file path.
     """
+    if path in self._loaded_files:
+      return
+
     global _RULE_NAMESPACE
     assert _RULE_NAMESPACE is None
     _RULE_NAMESPACE = self
@@ -260,6 +264,8 @@ class RuleNamespace(object):
       module = imp.load_source(name, path)
     finally:
       _RULE_NAMESPACE = None
+
+    self._loaded_files.append(path)
 
 
 # Used by begin_capturing_emitted_rules/build_rule to track all emitted rules
