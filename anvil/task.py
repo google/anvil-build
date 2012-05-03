@@ -167,9 +167,24 @@ class JavaExecutableTask(ExecutableTask):
       return None
 
 
-# TODO(benvanik): node.js-specific executable task
-# class NodeExecutableTask(ExecutableTask):
-#   pass
+class NodeExecutableTask(ExecutableTask):
+  """A task that executes a Node.js script in the shell.
+  """
+
+  def __init__(self, build_env, script_path, call_args=None, *args, **kwargs):
+    """Initializes an executable task.
+
+    Args:
+      build_env: The build environment for state.
+      script_path: The name (or full path) of a script to execute.
+      call_args: Arguments to pass to the executable.
+    """
+    executable_name = 'node'
+    call_args = [script_path] + call_args if call_args else []
+    super(NodeExecutableTask, self).__init__(build_env, executable_name,
+        call_args, *args, **kwargs)
+
+  # TODO(benvanik): detect_node_version
 
 
 class PythonExecutableTask(ExecutableTask):
@@ -184,9 +199,9 @@ class PythonExecutableTask(ExecutableTask):
       script_path: The name (or full path) of a script to execute.
       call_args: Arguments to pass to the executable.
     """
-    executable_name = script_path
-    call_args = call_args if call_args else []
-    super(PythonExecutableTask, self).__init__(build_env, script_path,
+    executable_name = 'python'
+    call_args = [script_path] + call_args if call_args else []
+    super(PythonExecutableTask, self).__init__(build_env, executable_name,
         call_args, *args, **kwargs)
 
   # TODO(benvanik): detect_python_version

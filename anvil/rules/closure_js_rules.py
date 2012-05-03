@@ -19,7 +19,7 @@ import re
 
 from anvil.context import RuleContext
 from anvil.rule import Rule, build_rule
-from anvil.task import (Task, JavaExecutableTask, PythonExecutableTask,
+from anvil.task import (Task, ExecutableTask, JavaExecutableTask,
     WriteFileTask)
 
 
@@ -69,7 +69,7 @@ class ClosureJsLintRule(Rule):
       # TODO(benvanik): only changed paths
       args.extend(self.src_paths)
 
-      d = self._run_task_async(PythonExecutableTask(
+      d = self._run_task_async(ExecutableTask(
           self.build_env, self.rule._command, args))
       # TODO(benvanik): pull out errors?
       self._chain(d)
