@@ -382,6 +382,7 @@ class JsDependencyGraph(object):
     for src_path in src_paths:
       dep_file = self.dep_files[src_path]
       rel_path = os.path.relpath(dep_file.src_path, base_path)
+      rel_path = rel_path.replace('build-out/', '').replace('build-gen/', '')
       lines.append('goog.addDependency(\'%s\', %s, %s);' % (
           rel_path, dep_file.provides, dep_file.requires))
     return u'\n'.join(lines)
