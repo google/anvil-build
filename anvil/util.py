@@ -36,6 +36,18 @@ def get_script_path():
   return os.path.dirname(os.path.abspath(inspect.stack()[1][1]))
 
 
+def strip_build_paths(path):
+  """Strips out build-*/ from the given path.
+
+  Args:
+    path: Path that may contain build-*/.
+
+  Returns:
+    The path with build-*/ removed.
+  """
+  return path.replace('build-out/', '').replace('build-gen/', '')
+
+
 def is_rule_path(value):
   """Detects whether the given value is a rule name.
 

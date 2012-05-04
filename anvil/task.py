@@ -105,13 +105,12 @@ class MakoTemplateTask(Task):
       template = Template(template_contents)
     except Exception as e:
       print 'Error in template file %s:\n%s' % (self.template_path, e)
-      raise
+      return False
     try:
       result = template.render_unicode(**self.template_args)
-      print result
     except Exception as e:
       print 'Error applying template %s:\n%s' % (self.template_path, e)
-      raise
+      return False
     with io.open(self.path, 'wt') as f:
       f.write(result)
     return True

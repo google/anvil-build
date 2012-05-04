@@ -496,8 +496,7 @@ class RuleContext(object):
     """
     root_path = self.build_context.build_env.root_path
     rel_path = os.path.relpath(src, root_path)
-    # Need to strip build-out and build-gen (so we can reference any file)
-    rel_path = rel_path.replace('build-out/', '').replace('build-gen/', '')
+    rel_path = util.strip_build_paths(rel_path)
     return os.path.normpath(os.path.join(base_path, rel_path))
 
   def _get_out_path_for_src(self, src):
