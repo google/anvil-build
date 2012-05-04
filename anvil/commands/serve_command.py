@@ -27,6 +27,7 @@ anvil serve --http_port=8080 --daemon_port=8081 :some_daemon
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
+import copy
 import os
 import sys
 
@@ -46,20 +47,64 @@ class ServeCommand(ManageCommand):
     parser = super(ServeCommand, self).create_argument_parser()
 
     # Add all common args
-    self._add_common_build_arguments(parser, targets=True)
+    self._add_common_build_arguments(
+        parser, targets=True, targets_optional=True)
 
     # 'serve' specific
+    parser.add_argument('-p', '--http_port',
+                        dest='http_port',
+                        type=int,
+                        default=8080,
+                        help=('TCP port the HTTP server will listen on.'))
 
     return parser
 
   def execute(self, args, cwd):
-    # Handle --rebuild
-    if args.rebuild:
-      if not commandutil.clean_output(cwd):
-        return False
+    # Initial build
+    if len(args.targets):
+      (result, all_target_outputs) = commandutil.run_build(cwd, args)
+      print all_target_outputs
 
-    (result, all_target_outputs) = commandutil.run_build(cwd, args)
+    self._launch_http_server(args.http_port, cwd)
 
-    print all_target_outputs
+    return 0
 
-    return 0 if result else 1
+  def _launch_http_server(self, port, root_path):
+    """Launches a simple static twisted HTTP server.
+    The server will automatically merge build-* paths in to a unified namespace.
+
+    Args:
+      port: TCP port to listen on.
+      root_path: Root path of the HTTP server.
+    """
+    from twisted.internet import reactor
+    from twisted.web.resource import Resource, NoResource
+    from twisted.web.server import Site
+    from twisted.web.static import File
+
+    # Special site handler that merges various output and input paths into a
+    # single unifed file system
+    class MergedSite(Site):
+      def getResourceFor(self, request):
+        # Scan well-known search paths first
+        search_paths = ['build-out', 'build-gen',]
+        for search_path in search_paths:
+          resource = self.resource
+          prepath = copy.copy(request.prepath)
+          postpath = copy.copy(request.postpath)
+          postpath.insert(0, search_path)
+          while postpath and not resource.isLeaf:
+            path_element = postpath.pop(0)
+            prepath.append(path_element)
+            resource = resource.getChildWithDefault(path_element, request)
+          if resource and not isinstance(resource, NoResource):
+            return resource
+        # Fallback to normal handling
+        return Site.getResourceFor(self, request)
+
+    print 'Launching HTTP server on port %s...' % (port)
+
+    root = File(root_path)
+    factory = MergedSite(root)
+    reactor.listenTCP(port, factory)
+    reactor.run()

@@ -49,7 +49,13 @@ def run_build(cwd, parsed_args):
   Args:
     cwd: Current working directory.
     parsed_args: Argument namespace from an ArgumentParser.
+
+  Returns:
+    (success, a list of all target output paths)
   """
+  if not len(parsed_args.targets):
+    return (True, [])
+
   build_env = BuildEnvironment(root_path=cwd)
 
   module_resolver = FileModuleResolver(cwd)

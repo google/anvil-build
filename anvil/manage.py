@@ -65,12 +65,14 @@ class ManageCommand(object):
         '--stop_on_error',
         ])
 
-  def _add_common_build_arguments(self, parser, targets=False):
+  def _add_common_build_arguments(self, parser, targets=False,
+      targets_optional=False):
     """Adds common build arguments to an argument parser.
 
     Args:
       parser: ArgumentParser to modify.
       targets: True to add variable target arguments.
+      targets_optional: Targets, if included, are optional
     """
     # Threading/execution control
     parser.add_argument('-j', '--jobs',
@@ -97,7 +99,7 @@ class ManageCommand(object):
     # Target specification
     if targets:
       parser.add_argument('targets',
-                          nargs='+',
+                          nargs='*' if targets_optional else '+',
                           metavar='target',
                           help='Target build rule (such as :a or foo/bar:a)')
 
