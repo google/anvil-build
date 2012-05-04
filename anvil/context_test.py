@@ -331,6 +331,25 @@ class RuleContextTest(FixtureTestCase):
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt', 'b.txt', 'c.txt', 'd.txt', 'e.txt']))
 
+    rule = project.resolve_rule(':multi_exts')
+    build_ctx._execute_rule(rule)
+
+    rule = project.resolve_rule(':only_a')
+    d = build_ctx._execute_rule(rule)
+    self.assertTrue(d.is_done())
+    rule_outputs = build_ctx.get_rule_outputs(rule)
+    self.assertEqual(
+        set([os.path.basename(f) for f in rule_outputs]),
+        set(['a.txt-a']))
+
+    rule = project.resolve_rule(':only_ab')
+    d = build_ctx._execute_rule(rule)
+    self.assertTrue(d.is_done())
+    rule_outputs = build_ctx.get_rule_outputs(rule)
+    self.assertEqual(
+        set([os.path.basename(f) for f in rule_outputs]),
+        set(['a.txt-a', 'b.txt-b']))
+
   def testRuleInputs(self):
     project = Project(module_resolver=FileModuleResolver(self.root_path))
     build_ctx = BuildContext(self.build_env, project)

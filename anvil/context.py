@@ -390,6 +390,10 @@ class RuleContext(object):
       OSError: A source path was not found or could not be accessed.
       RuntimeError: Internal runtime error (rule executed out of order/etc)
     """
+    src_filter_list = None
+    if apply_src_filter and self.rule.src_filter:
+      src_filter_list = self.rule.src_filter.split('|')
+
     base_path = os.path.dirname(self.rule.parent_module.path)
     input_paths = []
     for src in paths:
@@ -415,9 +419,9 @@ class RuleContext(object):
           src_items = [src_path]
 
       # Apply the src_filter, if any
-      if apply_src_filter and self.rule.src_filter:
+      if src_filter_list:
         for file_path in src_items:
-          if fnmatch.fnmatch(file_path, self.rule.src_filter):
+          if any(fnmatch.fnmatch(file_path, f) for f in src_filter_list):
             input_paths.append(file_path)
       else:
         input_paths.extend(src_items)

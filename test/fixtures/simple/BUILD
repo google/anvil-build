@@ -35,3 +35,12 @@ file_set('mixed_input',
     srcs=['b.txt', ':file_input'])
 file_set('missing_input',
     srcs=':x')
+
+file_set('multi_exts',
+    srcs=['a.txt-a', 'b.txt-b', 'c.txt-c'])
+file_set('only_a',
+    srcs=':multi_exts',
+    src_filter='*.txt-a')
+file_set('only_ab',
+    srcs=':multi_exts',
+    src_filter='*.txt-a|*.txt-b')
