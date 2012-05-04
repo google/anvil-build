@@ -3,6 +3,7 @@
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
+import inspect
 import os
 import string
 import sys
@@ -24,6 +25,15 @@ def get_anvil_path():
     The full path to the anvil/ source.
   """
   return os.path.normpath(os.path.dirname(__file__))
+
+
+def get_script_path():
+  """Gets the absolute parent path of the currently executing script.
+
+  Returns:
+    Absolute path of the calling file.
+  """
+  return os.path.dirname(os.path.abspath(inspect.stack()[1][1]))
 
 
 def is_rule_path(value):

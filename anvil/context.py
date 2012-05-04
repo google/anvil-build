@@ -11,7 +11,6 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 
 from collections import deque
 import fnmatch
-import inspect
 import multiprocessing
 import os
 import stat
@@ -366,14 +365,6 @@ class RuleContext(object):
 
     # This list of all files this rule outputted, upon completion
     self.all_output_files = []
-
-  def _get_script_path(self):
-    """Gets the absolute parent path of the currently executing script.
-
-    Returns:
-      Absolute path of the calling file.
-    """
-    return os.path.dirname(os.path.abspath(inspect.stack()[1][1]))
 
   def _resolve_input_files(self, paths, apply_src_filter=False):
     """Resolves the given paths into real file system paths, ready for use.
