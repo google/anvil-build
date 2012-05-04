@@ -6,6 +6,7 @@
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
+import copy
 import io
 import multiprocessing
 import os
@@ -73,6 +74,46 @@ class WriteFileTask(Task):
   def execute(self):
     with io.open(self.path, 'wt') as f:
       f.write(self.contents)
+    return True
+
+
+class MakoTemplateTask(Task):
+  """A task that applies a Mako template and writes the results.
+  """
+
+  def __init__(self, build_env, path, template_path, template_args,
+      *args, **kwargs):
+    """Initializes a Mako templating task.
+
+    Args:
+      build_env: The build environment for state.
+      path: Target file path.
+      template_path: Path to a Mako template file.
+      template_args: Dictionary of template arguments.
+    """
+    super(MakoTemplateTask, self).__init__(build_env, *args, **kwargs)
+    self.path = path
+    self.template_path = template_path
+    self.template_args = copy.deepcopy(template_args)
+
+  def execute(self):
+    from mako.template import Template
+    # TODO(benvanik): cache templates in memory?
+    with io.open(self.template_path, 'rt') as f:
+      template_contents = f.read()
+    try:
+      template = Template(template_contents)
+    except Exception as e:
+      print 'Error in template file %s:\n%s' % (self.template_path, e)
+      raise
+    try:
+      result = template.render_unicode(**self.template_args)
+      print result
+    except Exception as e:
+      print 'Error applying template %s:\n%s' % (self.template_path, e)
+      raise
+    with io.open(self.path, 'wt') as f:
+      f.write(result)
     return True
 
 
