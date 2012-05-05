@@ -134,6 +134,9 @@ class ClosureJsLibraryRule(Rule):
     debug: True to enable Closure DEBUG consts.
     compiler_flags: A list of string compiler flags.
     externs: Additional extern .js files.
+    wrap_with_global: Wrap all output in a closure and call with the given
+          global object.
+          Example - 'global' -> (function(){...code...}).call(global);
     out: Optional output name. If none is provided than the rule name will be
         used.
 
@@ -144,7 +147,7 @@ class ClosureJsLibraryRule(Rule):
 
   def __init__(self, name, mode, compiler_jar, entry_points,
         pretty_print=False, debug=False,
-        compiler_flags=None, externs=None, out=None,
+        compiler_flags=None, externs=None, wrap_with_global=None, out=None,
         *args, **kwargs):
     """Initializes a Closure JS library rule.
 
@@ -157,6 +160,9 @@ class ClosureJsLibraryRule(Rule):
       debug: True to enable Closure DEBUG consts.
       compiler_flags: A list of string compiler flags.
       externs: Additional extern .js files.
+      wrap_with_global: Wrap all output in a closure and call with the given
+          global object.
+          Example - 'global' -> (function(){...code...}).call(global);
       out: Optional output name.
     """
     super(ClosureJsLibraryRule, self).__init__(name, *args, **kwargs)
@@ -182,6 +188,7 @@ class ClosureJsLibraryRule(Rule):
       self.externs.extend(externs)
     self._append_dependent_paths(self.externs)
 
+    self.wrap_with_global = wrap_with_global
     self.out = out
 
   class _Context(RuleContext):
@@ -212,6 +219,10 @@ class ClosureJsLibraryRule(Rule):
       if not self.rule.debug:
         args.append('--define=goog.DEBUG=false')
         args.append('--define=goog.asserts.ENABLE_ASSERTS=false')
+
+      if self.rule.wrap_with_global:
+        args.append('--output_wrapper="(function(){%%output%%}).call(%s);"' % (
+            self.rule.wrap_with_global))
 
       extern_paths = self._resolve_input_files(self.rule.externs)
       for extern_path in extern_paths:
