@@ -227,7 +227,7 @@ class ClosureJsLibraryRule(Rule):
 
       extern_paths = self._resolve_input_files(self.rule.externs)
       for extern_path in extern_paths:
-        extern_flags.append('--externs=%s' % (extern_path))
+        args.append('--externs=%s' % (extern_path))
 
       for entry_point in self.rule.entry_points:
         args.append('--closure_entry_point=%s' % (entry_point))
