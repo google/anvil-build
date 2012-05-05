@@ -21,6 +21,7 @@ from anvil.context import RuleContext
 from anvil.rule import Rule, build_rule
 from anvil.task import (Task, ExecutableTask, JavaExecutableTask,
     WriteFileTask)
+import anvil.util
 
 
 @build_rule('closure_js_lint')
@@ -393,7 +394,7 @@ class JsDependencyGraph(object):
     for src_path in src_paths:
       dep_file = self.dep_files[src_path]
       rel_path = os.path.relpath(dep_file.src_path, base_path)
-      rel_path = rel_path.replace('build-out/', '').replace('build-gen/', '')
+      rel_path = anvil.util.strip_build_paths(rel_path)
       lines.append('goog.addDependency(\'%s\', %s, %s);' % (
           rel_path, dep_file.provides, dep_file.requires))
     return u'\n'.join(lines)
