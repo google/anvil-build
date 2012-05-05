@@ -428,6 +428,8 @@ class JsDependencyGraph(object):
     return deps_list
 
   def _add_dependencies(self, deps_list, namespace):
+    if not namespace in self._provide_map:
+      print 'Namespace %s not provided' % (namespace)
     assert namespace in self._provide_map
     dep_file = self._provide_map[namespace]
     if dep_file.src_path in deps_list:
