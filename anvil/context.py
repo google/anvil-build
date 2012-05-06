@@ -366,6 +366,14 @@ class RuleContext(object):
     # This list of all files this rule outputted, upon completion
     self.all_output_files = []
 
+  def _get_rule_path(self):
+    """Gets the path to the directory containing the rule.
+
+    Returns:
+      Path to the directory that contains the module that this rule is in.
+    """
+    return os.path.dirname(self.rule.parent_module.path)
+
   def _resolve_input_files(self, paths, apply_src_filter=False):
     """Resolves the given paths into real file system paths, ready for use.
     This adds direct file references, recursively enumerates paths, expands
