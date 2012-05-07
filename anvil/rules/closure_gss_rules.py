@@ -3,7 +3,7 @@
 """Closure compiler rules for the build system.
 
 Contains the following rules:
-closure_gss
+closure_gss_library
 """
 
 __author__ = 'benvanik@google.com (Ben Vanik)'
