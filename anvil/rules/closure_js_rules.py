@@ -68,7 +68,11 @@ class ClosureJsLintRule(Rule):
           ]
 
       # TODO(benvanik): only changed paths
-      args.extend(self.src_paths)
+      # Exclude any path containing build-*
+      for src_path in self.src_paths:
+        if (src_path.find('build-out/') == -1 and
+            src_path.find('build-gen/') == -1):
+          args.append(src_path)
 
       d = self._run_task_async(ExecutableTask(
           self.build_env, self.rule._command, args))
