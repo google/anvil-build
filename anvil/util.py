@@ -114,7 +114,7 @@ def which(executable_name):
   if (os.path.exists(executable_name) and
       not os.path.isdir(executable_name)):
     return os.path.abspath(executable_name)
-  for path in os.environ.get('PATH', '').split(':'):
+  for path in os.environ.get('PATH', '').split(os.pathsep):
     if (os.path.exists(os.path.join(path, executable_name)) and
         not os.path.isdir(os.path.join(path, executable_name))):
       return os.path.join(path, executable_name)

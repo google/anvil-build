@@ -21,7 +21,7 @@ def _scan_up(path, target_name):
   Returns:
     A full file path if the file is found, otherwise None.
   """
-  if not len(path) or path == '/':
+  if not len(path) or len(path.split(os.sep)) <= 2:
     return None
   self_path = os.path.join(path, target_name)
   if os.path.isfile(self_path):

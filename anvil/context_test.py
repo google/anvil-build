@@ -387,7 +387,7 @@ class RuleContextTest(FixtureTestCase):
 
   def _compare_path(self, result, expected):
     result = os.path.relpath(result, self.root_path)
-    self.assertEqual(result, expected)
+    self.assertEqual(result, os.path.normpath(expected))
 
   def testTargetPaths(self):
     project = Project(module_resolver=FileModuleResolver(self.root_path))

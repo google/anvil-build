@@ -20,7 +20,7 @@ class ConfigTest(FixtureTestCase):
   fixture = 'config'
 
   def testNone(self):
-    config = anvil.config.load('/tmp/')
+    config = anvil.config.load(os.path.dirname(self.root_path))
     self.assertIsNotNone(config)
     self.assertFalse(config.has_option('a', 'opt'))
 

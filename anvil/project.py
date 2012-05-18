@@ -216,7 +216,7 @@ class StaticModuleResolver(ModuleResolver):
     self.modules = {}
     if modules:
       for module in modules:
-        self.modules[module.path] = module
+        self.modules[os.path.normpath(module.path)] = module
 
   def resolve_module_path(self, path, working_path=None):
     real_path = path
@@ -225,7 +225,7 @@ class StaticModuleResolver(ModuleResolver):
     return os.path.normpath(real_path)
 
   def load_module(self, full_path, rule_namespace):
-    return self.modules.get(full_path, None)
+    return self.modules.get(os.path.normpath(full_path), None)
 
 
 class FileModuleResolver(ModuleResolver):
@@ -250,9 +250,9 @@ class FileModuleResolver(ModuleResolver):
 
     self.can_resolve_local = True
 
-    self.root_path = root_path
-    if not os.path.isdir(root_path):
-      raise IOError('Root path "%s" not found' % (root_path))
+    self.root_path = os.path.normpath(root_path)
+    if not os.path.isdir(self.root_path):
+      raise IOError('Root path "%s" not found' % (self.root_path))
 
   def resolve_module_path(self, path, working_path=None):
     # Compute the real path
@@ -262,18 +262,20 @@ class FileModuleResolver(ModuleResolver):
       real_path = os.path.join(working_path, path)
     real_path = os.path.normpath(real_path)
     full_path = os.path.join(self.root_path, real_path)
+    full_path = os.path.normpath(full_path)
 
     # Check to see if it exists and is a file
     # Special handling to find BUILD files under directories
-    mode = os.stat(full_path).st_mode
-    if stat.S_ISDIR(mode):
-      full_path = os.path.join(full_path, 'BUILD')
-      if not os.path.isfile(full_path):
+    if os.path.exists(full_path):
+      mode = os.stat(full_path).st_mode
+      if stat.S_ISDIR(mode):
+        full_path = os.path.join(full_path, 'BUILD')
+        if not os.path.isfile(full_path):
+          raise IOError('Path "%s" is not a file' % (full_path))
+      elif stat.S_ISREG(mode):
+        pass
+      else:
         raise IOError('Path "%s" is not a file' % (full_path))
-    elif stat.S_ISREG(mode):
-      pass
-    else:
-      raise IOError('Path "%s" is not a file' % (full_path))
 
     return os.path.normpath(full_path)
 

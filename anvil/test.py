@@ -125,7 +125,7 @@ class FixtureTestCase(AsyncTestCase):
         raise Error('Unable to find build path')
       fixture_path = os.path.join(
           build_path, '..', 'test', 'fixtures', self.fixture)
-      target_path = self.temp_path + '/' + self.fixture
+      target_path = os.path.join(self.temp_path, self.fixture)
       shutil.copytree(fixture_path, target_path)
 
   def assertFileContents(self, path, contents):

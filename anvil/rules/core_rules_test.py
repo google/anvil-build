@@ -24,11 +24,14 @@ class RuleTestCase(FixtureTestCase):
     self.assertEqual(results[0], Status.SUCCEEDED)
     output_paths = results[1]
 
+    fixed_expected = [os.path.normpath(f) for f in expected_file_matches]
+
     root_path = os.path.join(build_ctx.build_env.root_path, output_prefix)
-    result_file_list = [os.path.relpath(f, root_path) for f in output_paths]
+    result_file_list = \
+        [os.path.normpath(os.path.relpath(f, root_path)) for f in output_paths]
     self.assertEqual(
         set(result_file_list),
-        set(expected_file_matches))
+        set(fixed_expected))
 
 
 class FileSetRuleTest(RuleTestCase):

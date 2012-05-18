@@ -211,6 +211,10 @@ class FileModuleResolverTest(FixtureTestCase):
     with self.assertRaises(IOError):
       module_resolver.resolve_module_path('empty')
 
+  @unittest2.skipIf(sys.platform.startswith('win'), 'platform')
+  def testNonFsResolution(self):
+    module_resolver = FileModuleResolver(self.root_path)
+
     with self.assertRaises(IOError):
       module_resolver.resolve_module_path('/dev/null')
 

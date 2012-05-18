@@ -8,6 +8,7 @@
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
+import sys
 import unittest2
 
 from anvil import util
@@ -135,7 +136,15 @@ class UnderscoreToPascalCaseTest(unittest2.TestCase):
 class WhichTest(unittest2.TestCase):
   """Behavioral tests of the which method."""
 
-  def test(self):
+  @unittest2.skipUnless(sys.platform.startswith('win'), 'platform')
+  def testWindows(self):
+    notepad_path = 'C:\\Windows\\System32\\notepad.exe'
+    self.assertEqual(util.which(notepad_path), notepad_path)
+    self.assertIsNone(util.which('xxx'))
+    self.assertIsNotNone(util.which('notepad.exe'))
+
+  @unittest2.skipIf(sys.platform.startswith('win'), 'platform')
+  def testLinux(self):
     self.assertEqual(util.which('/bin/sh'), '/bin/sh')
     self.assertIsNone(util.which('xxx'))
     self.assertIsNotNone(util.which('cat'))
