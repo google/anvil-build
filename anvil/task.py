@@ -14,6 +14,7 @@ import re
 import subprocess
 import sys
 import time
+import traceback
 
 from anvil.async import Deferred
 
@@ -153,10 +154,15 @@ class ExecutableTask(Task):
     self.call_args = call_args if call_args else []
 
   def execute(self):
-    p = subprocess.Popen([self.executable_name] + self.call_args,
-                         bufsize=-1, # system default
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+    print self.executable_name, self.call_args
+    try:
+      p = subprocess.Popen([self.executable_name] + self.call_args,
+                           bufsize=-1, # system default
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE)
+    except:
+      print 'unable to open process'
+      raise ExecutableError()
 
     # TODO(benvanik): would be nice to support a few modes here - enabling
     #     streaming output from the process (for watching progress/etc).
@@ -330,6 +336,8 @@ class InProcessTaskExecutor(TaskExecutor):
       result = task.execute()
       deferred.callback(result)
     except Exception as e:
+      print 'exception in task:'
+      traceback.print_exc(e)
       deferred.errback(exception=e)
     return deferred
 

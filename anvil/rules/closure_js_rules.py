@@ -314,7 +314,7 @@ class JsDependencyFile(object):
     self.requires = []
     self.is_base_js = False
     self.is_css_rename_map = False
-    with io.open(self.src_path, 'rt') as f:
+    with io.open(self.src_path, 'rb') as f:
       self._scan(f)
 
   def _scan(self, f):
