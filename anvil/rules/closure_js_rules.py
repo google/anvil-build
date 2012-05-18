@@ -400,7 +400,8 @@ class JsDependencyGraph(object):
       rel_path = os.path.relpath(dep_file.src_path, base_path)
       rel_path = anvil.util.strip_build_paths(rel_path)
       lines.append('goog.addDependency(\'%s\', %s, %s);' % (
-          rel_path, dep_file.provides, dep_file.requires))
+          anvil.util.ensure_forwardslashes(rel_path),
+          dep_file.provides, dep_file.requires))
     return u'\n'.join(lines)
 
   def get_transitive_closure(self, entry_points):

@@ -37,6 +37,18 @@ def get_script_path():
   return os.path.dirname(os.path.abspath(inspect.stack()[1][1]))
 
 
+def ensure_forwardslashes(path):
+  """Fixes a potentially Windows-esque file path into a valid URI.
+
+  Args:
+    path: File path, maybe containing \\.
+
+  Returns:
+    The input path with the separators flipped to URI standard /.
+  """
+  return string.replace(path, '\\', '/')
+
+
 def strip_build_paths(path):
   """Strips out build-*/ from the given path.
 
