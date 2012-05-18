@@ -101,6 +101,6 @@ class DeployCommand(ManageCommand):
 
       # Copy!
       print '%s -> %s' % (target_output, deploy_path)
-      shutil.copy2(target_output, deploy_path)
+      shutil.copy(target_output, deploy_path)
 
     return 0 if result else 1
