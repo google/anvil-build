@@ -15,6 +15,10 @@ from anvil.task import *
 from anvil.test import AsyncTestCase, FixtureTestCase
 
 
+# TODO(benvanik): test WriteFileTask
+# TODO(benvanik): test MakoTemplateTask
+
+
 class ExecutableTaskTest(FixtureTestCase):
   """Behavioral tests for ExecutableTask."""
   fixture = 'simple'
@@ -42,6 +46,24 @@ class ExecutableTaskTest(FixtureTestCase):
 
     # TODO(benvanik): test a JAR somehow
     task = JavaExecutableTask(self.build_env, 'some_jar')
+
+  # def testNode(self):
+  #   version = NodeExecutableTask.detect_node_version()
+  #   self.assertNotEqual(len(version), 0)
+  #   self.assertIsNone(
+  #       NodeExecutableTask.detect_node_version(node_executable='xxx'))
+
+  #   # TODO(benvanik): test a nodejs app
+  #   task = NodeExecutableTask(self.build_env, 'some_js')
+
+  # def testPython(self):
+  #   version = PythonExecutableTask.detect_python_version()
+  #   self.assertNotEqual(len(version), 0)
+  #   self.assertIsNone(
+  #       PythonExecutableTask.detect_python_version(python_executable='xxx'))
+
+  #   # TODO(benvanik): test a python script
+  #   task = PythonExecutableTask(self.build_env, 'some_py')
 
 
 class SuccessTask(Task):
