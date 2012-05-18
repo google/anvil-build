@@ -70,10 +70,24 @@ class ValidateNamesTest(unittest2.TestCase):
   def testRequireSemicolon(self):
     util.validate_names([':a'], require_semicolon=True)
     util.validate_names([':a', ':b'], require_semicolon=True)
+    util.validate_names(['C:/a/:b'], require_semicolon=True)
+    util.validate_names(['C:\\a\\:b'], require_semicolon=True)
     with self.assertRaises(NameError):
       util.validate_names(['a'], require_semicolon=True)
     with self.assertRaises(NameError):
       util.validate_names([':a', 'b'], require_semicolon=True)
+    with self.assertRaises(NameError):
+      util.validate_names([':/a'], require_semicolon=True)
+    with self.assertRaises(NameError):
+      util.validate_names([':\\a'], require_semicolon=True)
+    with self.assertRaises(NameError):
+      util.validate_names(['C:\\a'], require_semicolon=True)
+    with self.assertRaises(NameError):
+      util.validate_names(['C:\\a:\\b'], require_semicolon=True)
+    with self.assertRaises(NameError):
+      util.validate_names([':a/b'], require_semicolon=True)
+    with self.assertRaises(NameError):
+      util.validate_names(['a:b/a'], require_semicolon=True)
 
 
 class UnderscoreToPascalCaseTest(unittest2.TestCase):

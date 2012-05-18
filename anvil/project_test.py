@@ -289,17 +289,17 @@ class FileModuleResolverTest(FixtureTestCase):
     module_resolver = FileModuleResolver(self.root_path)
 
     project = Project(module_resolver=module_resolver)
-    with self.assertRaises(OSError):
+    with self.assertRaises(IOError):
       project.resolve_rule('x:rule_x')
     self.assertEqual(len(project.module_list()), 0)
 
     project = Project(module_resolver=module_resolver)
-    with self.assertRaises(OSError):
+    with self.assertRaises(IOError):
       project.resolve_rule('/x:rule_x')
     self.assertEqual(len(project.module_list()), 0)
 
     project = Project(module_resolver=module_resolver)
-    with self.assertRaises(OSError):
+    with self.assertRaises(IOError):
       project.resolve_rule('/BUILD:root_rule')
     self.assertEqual(len(project.module_list()), 0)
 

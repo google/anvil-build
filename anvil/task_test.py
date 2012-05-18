@@ -27,7 +27,24 @@ class ExecutableTaskTest(FixtureTestCase):
     super(ExecutableTaskTest, self).setUp()
     self.build_env = BuildEnvironment(root_path=self.root_path)
 
-  def testExecution(self):
+  @unittest2.skipUnless(sys.platform.startswith('win'), 'platform')
+  def testExecutionWindows(self):
+    task = ExecutableTask(self.build_env, 'cmd', [
+        '/Q', '/C',
+        'type',
+        os.path.join(self.root_path, 'a.txt')])
+    self.assertEqual(task.execute(),
+        ('hello!\n', ''))
+
+    task = ExecutableTask(self.build_env, 'cmd', [
+        '/Q', '/C',
+        'type',
+        os.path.join(self.root_path, 'x.txt')])
+    with self.assertRaises(ExecutableError):
+      task.execute()
+
+  @unittest2.skipIf(sys.platform.startswith('win'), 'platform')
+  def testExecutionUnix(self):
     task = ExecutableTask(self.build_env, 'cat', [
         os.path.join(self.root_path, 'a.txt')])
     self.assertEqual(task.execute(),

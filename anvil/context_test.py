@@ -70,7 +70,7 @@ class BuildContextTest(FixtureTestCase):
         ctx.execute_async(['x'])
       with self.assertRaises(KeyError):
         ctx.execute_async([':x'])
-      with self.assertRaises(OSError):
+      with self.assertRaises(IOError):
         ctx.execute_async(['x:x'])
 
     with BuildContext(self.build_env, project) as ctx:

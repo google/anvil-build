@@ -5,6 +5,7 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 
 import inspect
 import os
+import re
 import string
 import sys
 import time
@@ -45,7 +46,15 @@ def strip_build_paths(path):
   Returns:
     The path with build-*/ removed.
   """
-  return path.replace('build-out/', '').replace('build-gen/', '')
+  strip_paths = [
+      'build-out%s' % os.sep,
+      'build-gen%s' % os.sep,
+      'build-out%s' % os.altsep,
+      'build-gen%s' % os.altsep,
+      ]
+  for strip_path in strip_paths:
+    path = path.replace(strip_path, '')
+  return path
 
 
 def is_rule_path(value):
@@ -54,9 +63,16 @@ def is_rule_path(value):
   Returns:
     True if the string is a valid rule name.
   """
-  # NOTE: in the future this could be made to support modules/etc by looking
-  #     for any valid use of ':'
-  return isinstance(value, str) and len(value) and string.find(value, ':') >= 0
+  if not isinstance(value, str) or not len(value):
+    return False
+  semicolon = string.rfind(value, ':')
+  if semicolon < 0:
+    return False
+  # Must be just a valid literal after, no path separators
+  if (string.find(value, '\\', semicolon) >= 0 or
+      string.find(value, '/', semicolon) >= 0):
+    return False
+  return True
 
 
 def validate_names(values, require_semicolon=False):
@@ -68,6 +84,7 @@ def validate_names(values, require_semicolon=False):
 
   Raises:
     NameError: A rule value is not valid.
+    TypeError: The type of values is incorrect.
   """
   if not values:
     return
@@ -77,7 +94,7 @@ def validate_names(values, require_semicolon=False):
     if len(value.strip()) != len(value):
       raise NameError(
           'Names cannot have leading/trailing whitespace: "%s"' % (value))
-    if require_semicolon and string.find(value, ':') == -1:
+    if require_semicolon and not is_rule_path(value):
       raise NameError('Names must be a rule (contain a :): "%s"' % (value))
 
 

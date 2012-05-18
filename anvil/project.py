@@ -18,7 +18,7 @@ import string
 
 from anvil.module import ModuleLoader
 from anvil.rule import RuleNamespace
-from anvil import util
+import anvil.util
 
 
 class Project(object):
@@ -127,8 +127,9 @@ class Project(object):
     Raises:
       NameError: The given rule name was not valid.
       KeyError: The given rule was not found.
+      IOError: Unable to load referenced module.
     """
-    if string.find(rule_path, ':') == -1:
+    if not anvil.util.is_rule_path(rule_path):
       raise NameError('The rule path "%s" is missing a semicolon' % (rule_path))
     (module_path, rule_name) = string.rsplit(rule_path, ':', 1)
     if self.module_resolver.can_resolve_local:
@@ -196,7 +197,7 @@ class ModuleResolver(object):
       A Module representing the given path or None if it could not be found.
 
     Raises:
-      IOError/OSError: The module could not be found.
+      IOError: The module could not be found.
     """
     raise NotImplementedError()
 

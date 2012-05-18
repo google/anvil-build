@@ -150,8 +150,11 @@ class ModuleLoader(object):
 
     # Read the source as a string
     if source_string is None:
-      with io.open(self.path, 'r') as f:
-        self.code_str = f.read()
+      try:
+        with io.open(self.path, 'r') as f:
+          self.code_str = f.read()
+      except Exception as e:
+        raise IOError('Unable to find or read %s' % (self.path))
     else:
       self.code_str = source_string
 
