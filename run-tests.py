@@ -13,9 +13,15 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 import os
 import sys
 
-# Add self to the root search path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-# Run the tests
-import anvil.test
-anvil.test.main()
+def main():
+  # Add self to the root search path
+  sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+
+  # Run the tests
+  import anvil.test
+  anvil.test.main()
+
+
+if __name__ == '__main__':
+  main()

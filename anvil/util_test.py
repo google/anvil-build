@@ -144,7 +144,7 @@ class WhichTest(unittest2.TestCase):
     self.assertIsNotNone(util.which('notepad.exe'))
 
   @unittest2.skipIf(sys.platform.startswith('win'), 'platform')
-  def testLinux(self):
+  def testUnix(self):
     self.assertEqual(util.which('/bin/sh'), '/bin/sh')
     self.assertIsNone(util.which('xxx'))
     self.assertIsNotNone(util.which('cat'))
