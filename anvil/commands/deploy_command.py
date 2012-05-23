@@ -78,6 +78,10 @@ class DeployCommand(ManageCommand):
     if not os.path.isdir(args.output):
       os.makedirs(args.output)
 
+    # Sort all outputs by path, as it makes things prettier
+    all_target_outputs = list(all_target_outputs)
+    all_target_outputs.sort()
+
     # Copy results
     for target_output in all_target_outputs:
       # Get path relative to root
