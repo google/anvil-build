@@ -62,11 +62,12 @@ def run_build(cwd, parsed_args):
   project = Project(module_resolver=module_resolver)
 
   # -j/--jobs switch to change execution mode
-  # TODO(benvanik): force -j 1 on Cygwin?
-  if parsed_args.jobs == 1:
-    task_executor = InProcessTaskExecutor()
-  else:
-    task_executor = MultiProcessTaskExecutor(worker_count=parsed_args.jobs)
+  # TODO(benvanik): re-enable when multiprocessing works
+  task_executor = None
+  #if parsed_args.jobs == 1:
+  #  task_executor = InProcessTaskExecutor()
+  #else:
+  #  task_executor = MultiProcessTaskExecutor(worker_count=parsed_args.jobs)
 
   # TODO(benvanik): good logging/info - resolve rules in project and print
   #     info?
