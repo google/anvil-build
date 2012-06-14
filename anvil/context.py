@@ -599,6 +599,8 @@ class RuleContext(object):
     """
     self.status = Status.RUNNING
     self.start_time = util.timer()
+    # TODO(benvanik): real logging of rule processing
+    print '-> %20s : %s' % (self.rule.rule_name, self.rule.path)
     return self.deferred
 
   def cascade_failure(self):
@@ -637,6 +639,8 @@ class RuleContext(object):
     self.status = Status.FAILED
     self.end_time = util.timer()
     self.exception = exception
+    # TODO(benvanik): real logging of rule failure
+    print '!! failed %s' % (self.rule)
     if exception:
       self.deferred.errback(exception=exception)
     else:

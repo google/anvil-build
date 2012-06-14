@@ -154,7 +154,7 @@ class ExecutableTask(Task):
     self.call_args = call_args if call_args else []
 
   def execute(self):
-    print self.executable_name, self.call_args
+    #print self.executable_name, self.call_args
     try:
       p = subprocess.Popen([self.executable_name] + self.call_args,
                            bufsize=-1, # system default

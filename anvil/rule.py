@@ -40,7 +40,7 @@ class Rule(object):
   _whitespace_re = re.compile('\s', re.M)
 
   def __init__(self, name, srcs=None, deps=None, src_filter=None,
-               *args, **kwargs):
+               rule_name=None, *args, **kwargs):
     """Initializes a rule.
 
     Args:
@@ -50,6 +50,7 @@ class Rule(object):
       deps: A list of depdendency strings or a single dependency string.
       src_filter: An inclusionary file name filter for all non-rule paths. If
           defined only srcs that match this filter will be included.
+      rule_name: Name of the rule in BUILD files, making it easier to debug.
 
     Raises:
       NameError: The given name is invalid (None/0-length).
@@ -62,6 +63,9 @@ class Rule(object):
     if name[0] == ':':
       raise NameError('Name cannot start with :')
     self.name = name
+
+    # For debugging
+    self.rule_name = rule_name if rule_name else 'rule?'
 
     # Path will be updated when the parent module is set
     self.parent_module = None
@@ -93,6 +97,9 @@ class Rule(object):
     self.src_filter = None
     if src_filter and len(src_filter):
       self.src_filter = src_filter
+
+  def __repr__(self):
+    return '%s(%s)' % (self.rule_name, self.path)
 
   def _append_dependent_paths(self, paths, require_semicolon=False):
     """Appends a list of paths to the rule's dependent paths.
@@ -198,7 +205,7 @@ class RuleNamespace(object):
       rule_cls: Rule type class.
     """
     def rule_definition(name, *args, **kwargs):
-      rule = rule_cls(name, *args, **kwargs)
+      rule = rule_cls(name, rule_name=rule_name, *args, **kwargs)
       _emit_rule(rule)
     rule_definition.rule_name = rule_name
     if self.rule_types.has_key(rule_name):
@@ -321,8 +328,9 @@ class build_rule(object):
   def __call__(self, cls):
     # This wrapper function makes it possible to record all invocations of
     # a rule while loading the module
+    rule_name = self.rule_name
     def rule_definition(name, *args, **kwargs):
-      rule = cls(name, *args, **kwargs)
+      rule = cls(name, rule_name=rule_name, *args, **kwargs)
       _emit_rule(rule)
     rule_definition.rule_name = self.rule_name
 
