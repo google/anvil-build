@@ -599,8 +599,14 @@ class RuleContext(object):
     """
     self.status = Status.RUNNING
     self.start_time = util.timer()
+
     # TODO(benvanik): real logging of rule processing
-    print '-> %20s : %s' % (self.rule.rule_name, self.rule.path)
+    # This makes the path relative and strips BUILD: (which may be wrong, w/e)
+    rel_path = os.path.relpath(self.rule.path, self.build_env.root_path)
+    rel_path = rel_path.replace('/BUILD:', ':').replace('BUILD:', ':')
+
+    print '... %20s ~ %s' % (self.rule.rule_name, rel_path)
+
     return self.deferred
 
   def cascade_failure(self):
