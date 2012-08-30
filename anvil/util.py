@@ -28,6 +28,26 @@ def get_anvil_path():
   return os.path.normpath(os.path.dirname(__file__))
 
 
+def get_build_file_path(path):
+  """Gets the path to a BUILD file, given a directory or file.
+  If a directory is passed the implicit build file names (such as BUILD) will
+  be checked; if they exist, they will be returned.
+  If the file cannot be found/does not exist the input will be returned.
+
+  Args:
+    path: File or directory path.
+
+  Returns:
+    The input or a modified path if a special build file exists.
+  """
+  if os.path.isdir(path):
+    if os.path.isfile(os.path.join(path, 'BUILD.anvil')):
+      return os.path.join(path, 'BUILD.anvil')
+    elif os.path.isfile(os.path.join(path, 'BUILD')):
+      return os.path.join(path, 'BUILD')
+  return path
+
+
 def get_script_path():
   """Gets the absolute parent path of the currently executing script.
 

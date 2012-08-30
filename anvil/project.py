@@ -267,16 +267,9 @@ class FileModuleResolver(ModuleResolver):
 
     # Check to see if it exists and is a file
     # Special handling to find BUILD files under directories
-    if os.path.exists(full_path):
-      mode = os.stat(full_path).st_mode
-      if stat.S_ISDIR(mode):
-        full_path = os.path.join(full_path, 'BUILD')
-        if not os.path.isfile(full_path):
-          raise IOError('Path "%s" is not a file' % (full_path))
-      elif stat.S_ISREG(mode):
-        pass
-      else:
-        raise IOError('Path "%s" is not a file' % (full_path))
+    full_path = anvil.util.get_build_file_path(full_path)
+    if not os.path.isfile(full_path):
+      raise IOError('Path "%s" is not a file' % (full_path))
 
     return os.path.normpath(full_path)
 

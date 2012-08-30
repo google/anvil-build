@@ -251,8 +251,7 @@ def autocomplete(words, cword, cwd, commands=None):
       # If there is a BUILD file in the current path, get all rules from it
       target_module = cwd
   if len(target_module):
-    if os.path.isdir(target_module):
-      target_module = os.path.join(target_module, 'BUILD')
+    target_module = util.get_build_file_path(target_module)
     if os.path.isfile(target_module):
       # Module exists! Extract the rules and return them
       # TODO(benvanik): maybe load the module? that requires a lot more work...
