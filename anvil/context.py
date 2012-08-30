@@ -603,7 +603,7 @@ class RuleContext(object):
     # TODO(benvanik): real logging of rule processing
     # This makes the path relative and strips BUILD: (which may be wrong, w/e)
     rel_path = os.path.relpath(self.rule.path, self.build_env.root_path)
-    rel_path = rel_path.replace('/BUILD:', ':').replace('BUILD:', ':')
+    rel_path = util.strip_implicit_build_name(rel_path)
 
     print '... %20s ~ %s' % (self.rule.rule_name, rel_path)
 

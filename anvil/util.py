@@ -48,6 +48,20 @@ def get_build_file_path(path):
   return path
 
 
+def strip_implicit_build_name(path):
+  """Strips the implicit build names (such as BUILD) from the given path.
+
+  Args:
+    path: A path that may contain a BUILD name.
+
+  Returns:
+    The path with the name stripped.
+  """
+  path = path.replace('/BUILD:', ':').replace('BUILD:', ':')
+  path = path.replace('/BUILD.anvil:', ':').replace('BUILD.anvil:', ':')
+  return path
+
+
 def get_script_path():
   """Gets the absolute parent path of the currently executing script.
 
