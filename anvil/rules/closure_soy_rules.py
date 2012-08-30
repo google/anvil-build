@@ -52,6 +52,11 @@ class ClosureSoyLibraryRule(Rule):
     def begin(self):
       super(ClosureSoyLibraryRule._Context, self).begin()
 
+      # If there are no source paths, die
+      if not len(self.src_paths):
+        self._succeed()
+        return
+
       args = [
           '--shouldProvideRequireSoyNamespaces',
           '--shouldGenerateJsdoc',
