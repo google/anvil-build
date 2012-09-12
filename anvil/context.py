@@ -398,9 +398,12 @@ class RuleContext(object):
       OSError: A source path was not found or could not be accessed.
       RuntimeError: Internal runtime error (rule executed out of order/etc)
     """
-    src_filter_list = None
+    include_filter_list = []
     if apply_src_filter and self.rule.src_filter:
-      src_filter_list = self.rule.src_filter.split('|')
+      include_filter_list = self.rule.src_filter.split('|')
+    exclude_filter_list = []
+    if apply_src_filter and self.rule.src_exclude_filter:
+      exclude_filter_list = self.rule.src_exclude_filter.split('|')
 
     base_path = os.path.dirname(self.rule.parent_module.path)
     input_paths = []
@@ -420,16 +423,20 @@ class RuleContext(object):
       else:
         # File or folder path
         src_path = os.path.join(base_path, src)
-        mode = os.stat(src_path).st_mode
-        if stat.S_ISDIR(mode):
+        if not os.path.exists(src_path):
+          raise OSError('Source path "%s" not found' % (src_path))
+        elif os.path.isdir(src_path):
           src_items = os.listdir(src_path)
         else:
           src_items = [src_path]
 
       # Apply the src_filter, if any
-      if src_filter_list:
+      if len(include_filter_list) or len(exclude_filter_list):
         for file_path in src_items:
-          if any(fnmatch.fnmatch(file_path, f) for f in src_filter_list):
+          if any(fnmatch.fnmatch(file_path, f) for f in exclude_filter_list):
+            continue
+          if (not len(include_filter_list) or
+              any(fnmatch.fnmatch(file_path, f) for f in include_filter_list)):
             input_paths.append(file_path)
       else:
         input_paths.extend(src_items)

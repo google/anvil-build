@@ -26,6 +26,13 @@ file_set('local_txt_filter',
 file_set('recursive_txt_filter',
     srcs=glob('**/*'),
     src_filter='*.txt')
+file_set('exclude_txt_filter',
+    srcs=glob('*'),
+    src_exclude_filter='*.txt')
+file_set('include_exclude_filter',
+    srcs=glob('*'),
+    src_filter='*.txt-a|*.txt-b',
+    src_exclude_filter='*.txt')
 
 file_set('file_input',
     srcs='a.txt')

@@ -40,7 +40,7 @@ class Rule(object):
   _whitespace_re = re.compile('\s', re.M)
 
   def __init__(self, name, srcs=None, deps=None, src_filter=None,
-               rule_name=None, *args, **kwargs):
+               src_exclude_filter=None, rule_name=None, *args, **kwargs):
     """Initializes a rule.
 
     Args:
@@ -50,6 +50,9 @@ class Rule(object):
       deps: A list of depdendency strings or a single dependency string.
       src_filter: An inclusionary file name filter for all non-rule paths. If
           defined only srcs that match this filter will be included.
+      src_exclude_filter: An exclusionary file name filter for all non-rule
+          paths. If defined only srcs that do not match this filter will be
+          included.
       rule_name: Name of the rule in BUILD files, making it easier to debug.
 
     Raises:
@@ -97,6 +100,9 @@ class Rule(object):
     self.src_filter = None
     if src_filter and len(src_filter):
       self.src_filter = src_filter
+    self.src_exclude_filter = None
+    if src_exclude_filter and len(src_exclude_filter):
+      self.src_exclude_filter = src_exclude_filter
 
   def __repr__(self):
     return '%s(%s)' % (self.rule_name, self.path)

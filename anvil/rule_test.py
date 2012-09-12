@@ -188,6 +188,14 @@ class RuleTest(unittest2.TestCase):
     rule = Rule('a', src_filter='*.js')
     self.assertEqual(rule.src_filter, '*.js')
 
+  def testRuleExclusionFilter(self):
+    rule = Rule('a')
+    self.assertIsNone(rule.src_exclude_filter)
+    rule = Rule('a', src_filter='')
+    self.assertIsNone(rule.src_exclude_filter)
+    rule = Rule('a', src_exclude_filter='*.js')
+    self.assertEqual(rule.src_exclude_filter, '*.js')
+
 
 class RuleNamespaceTest(FixtureTestCase):
   """Behavioral tests of the Rule type."""
