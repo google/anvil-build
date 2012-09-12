@@ -404,6 +404,7 @@ class RuleContext(object):
     exclude_filter_list = []
     if apply_src_filter and self.rule.src_exclude_filter:
       exclude_filter_list = self.rule.src_exclude_filter.split('|')
+      print 'got filters %s' % (exclude_filter_list)
 
     base_path = os.path.dirname(self.rule.parent_module.path)
     input_paths = []
@@ -426,17 +427,19 @@ class RuleContext(object):
         if not os.path.exists(src_path):
           raise OSError('Source path "%s" not found' % (src_path))
         elif os.path.isdir(src_path):
-          src_items = os.listdir(src_path)
+          src_items = [os.path.join(src_path, child)
+                       for child in os.listdir(src_path)]
         else:
           src_items = [src_path]
 
       # Apply the src_filter, if any
       if len(include_filter_list) or len(exclude_filter_list):
         for file_path in src_items:
-          if any(fnmatch.fnmatch(file_path, f) for f in exclude_filter_list):
+          file_name = os.path.basename(file_path)
+          if any(fnmatch.fnmatch(file_name, f) for f in exclude_filter_list):
             continue
           if (not len(include_filter_list) or
-              any(fnmatch.fnmatch(file_path, f) for f in include_filter_list)):
+              any(fnmatch.fnmatch(file_name, f) for f in include_filter_list)):
             input_paths.append(file_path)
       else:
         input_paths.extend(src_items)

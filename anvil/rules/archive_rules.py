@@ -27,13 +27,15 @@ class ArchiveFilesRule(Rule):
     srcs: Source file paths.
     out: Optional output name. If none is provided than the rule name will be
         used.
+    flatten_paths: A list of paths to flatten into the root. For example,
+        pass ['a/'] to flatten 'a/b/c.txt' to 'b/c.txt'
 
   Outputs:
     All of the srcs archived into a single zip file. If no out is specified
     a file with the name of the rule will be created.
   """
 
-  def __init__(self, name, out=None, *args, **kwargs):
+  def __init__(self, name, out=None, flatten_paths=None, *args, **kwargs):
     """Initializes an archive files rule.
 
     Args:
@@ -42,6 +44,9 @@ class ArchiveFilesRule(Rule):
     """
     super(ArchiveFilesRule, self).__init__(name, *args, **kwargs)
     self.out = out
+    self.flatten_paths = flatten_paths or []
+    self.flatten_paths = [path.replace('/', os.path.sep)
+                          for path in self.flatten_paths]
 
   class _Context(RuleContext):
     def begin(self):
@@ -56,6 +61,8 @@ class ArchiveFilesRule(Rule):
       for src_path in self.src_paths:
         rel_path = os.path.relpath(src_path, self.build_env.root_path)
         rel_path = anvil.util.strip_build_paths(rel_path)
+        for prefix in self.rule.flatten_paths:
+          rel_path = rel_path.replace(prefix, '')
         paths.append((src_path, rel_path))
 
       # Async issue archive task
