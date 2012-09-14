@@ -128,11 +128,13 @@ class ClosureJsLibraryRule(Rule):
   operation and can be used when interactively running code in a browser in
   uncompiled mode.
 
+  In DEPS mode then only a -deps.js file is generated.
+
   A compiler JAR must be provided.
 
   Inputs:
     srcs: All source JS files.
-    mode: Compilation mode, one of ['UNCOMPILED', 'SIMPLE', 'ADVANCED'].
+    mode: Compilation mode, one of ['DEPS', UNCOMPILED', 'SIMPLE', 'ADVANCED'].
     compiler_jar: Path to a compiler .jar file.
     entry_points: A list of entry points, such as 'myapp.start'.
     pretty_print: True to pretty print the output.
@@ -144,6 +146,8 @@ class ClosureJsLibraryRule(Rule):
           Example - 'global' -> (function(){...code...}).call(global);
     out: Optional output name. If none is provided than the rule name will be
         used.
+    deps_out: Base name for -deps.js file.
+        Example: 'library' -> 'library-deps.js'
 
   Outputs:
     A single compiled JS file. If no out is specified a file with the name of
@@ -152,7 +156,8 @@ class ClosureJsLibraryRule(Rule):
 
   def __init__(self, name, mode, compiler_jar, entry_points,
         pretty_print=False, debug=False,
-        compiler_flags=None, externs=None, wrap_with_global=None, out=None,
+        compiler_flags=None, externs=None, wrap_with_global=None,
+        out=None, deps_out=None,
         *args, **kwargs):
     """Initializes a Closure JS library rule.
 
@@ -169,6 +174,8 @@ class ClosureJsLibraryRule(Rule):
           global object.
           Example - 'global' -> (function(){...code...}).call(global);
       out: Optional output name.
+      deps_out: Base name for -deps.js file.
+          Example: 'library' -> 'library-deps.js'
     """
     super(ClosureJsLibraryRule, self).__init__(name, *args, **kwargs)
     self.src_filter = '*.js'
@@ -195,6 +202,7 @@ class ClosureJsLibraryRule(Rule):
 
     self.wrap_with_global = wrap_with_global
     self.out = out
+    self.deps_out = deps_out
 
   class _Context(RuleContext):
     def begin(self):
@@ -209,8 +217,16 @@ class ClosureJsLibraryRule(Rule):
           ]
       args.extend(self.rule.compiler_flags)
 
+      deps_only = False
       compiling = False
-      if self.rule.mode == 'SIMPLE':
+      if self.rule.mode == 'DEPS':
+        deps_only = True
+      elif self.rule.mode == 'UNCOMPILED':
+        compiling = True
+        args.append('--compilation_level=WHITESPACE_ONLY')
+        args.append('--formatting=PRETTY_PRINT')
+        args.append('--formatting=PRINT_INPUT_DELIMITER')
+      elif self.rule.mode == 'SIMPLE':
         compiling = True
         args.append('--compilation_level=SIMPLE_OPTIMIZATIONS')
       elif self.rule.mode == 'ADVANCED':
@@ -236,17 +252,18 @@ class ClosureJsLibraryRule(Rule):
       for entry_point in self.rule.entry_points:
         args.append('--closure_entry_point=%s' % (entry_point))
 
+      # Main js library
       if compiling:
-        # Compiling - will generate the main js library
         output_path = self._get_out_path(name=self.rule.out, suffix='.js')
         self._ensure_output_exists(os.path.dirname(output_path))
         self._append_output_paths([output_path])
         args.append('--js_output_file=%s' % (output_path))
-      else:
-        # Uncompiled - will generate a deps.js file
-        deps_js_path = self._get_out_path(name=self.rule.out, suffix='-deps.js')
-        self._ensure_output_exists(os.path.dirname(deps_js_path))
-        self._append_output_paths([deps_js_path])
+
+      # deps.js file
+      deps_name = self.rule.deps_out or self.rule.out
+      deps_js_path = self._get_out_path(name=deps_name, suffix='-deps.js')
+      self._ensure_output_exists(os.path.dirname(deps_js_path))
+      self._append_output_paths([deps_js_path])
 
       # Issue dependency scanning to build the deps graph
       d = self._run_task_async(_ScanJsDependenciesTask(
@@ -260,9 +277,8 @@ class ClosureJsLibraryRule(Rule):
         used_paths = dep_graph.get_transitive_closure(self.rule.entry_points)
 
         # Generate/write JS deps
-        if not compiling:
-          ds.append(self._run_task_async(WriteFileTask(
-              self.build_env, dep_graph.get_deps_js(), deps_js_path)))
+        ds.append(self._run_task_async(WriteFileTask(
+            self.build_env, dep_graph.get_deps_js(), deps_js_path)))
 
         # Compile main lib
         if compiling:
@@ -273,7 +289,7 @@ class ClosureJsLibraryRule(Rule):
           # TODO(benvanik): pull out (stdout, stderr) from result and the
           #     exception to get better error logging
         else:
-          # Uncompiled - pass along all inputs as outputs
+          # deps-only - pass along all inputs as outputs
           self._append_output_paths(used_paths)
 
         self._chain(ds)
