@@ -8,6 +8,7 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 
 import io
 import os
+import re
 import shutil
 import string
 
@@ -240,4 +241,83 @@ class _TemplateFilesTask(Task):
       result_str = template.substitute(self.params)
       with io.open(file_pair[1], 'wt') as f:
         f.write(result_str)
+    return True
+
+
+
+@build_rule('strip_comments')
+class StripCommentsRule(Rule):
+  """Applies simple comment stripping to a set of files.
+  Processes each source file removing C/C++-style comments.
+
+  Note that this is incredibly hacky and may break in all sorts of cases.
+
+  In order to prevent conflicts, it is strongly encouraged that a new_extension
+  value is provided. If a source file has an extension it will be replaced with
+  the specified one, and files without extensions will have it added.
+
+  Inputs:
+    srcs: Source file paths.
+    new_extension: The extension to replace (or add) to all output files, with a
+        leading dot ('.txt').
+
+  Outputs:
+    One file for each source file with the comments removed.
+  """
+
+  def __init__(self, name, new_extension=None, *args, **kwargs):
+    """Initializes a comment stripping rule.
+
+    Args:
+      name: Rule name.
+      new_extension: Replacement extension ('.txt').
+    """
+    super(StripCommentsRule, self).__init__(name, *args, **kwargs)
+    self.new_extension = new_extension
+
+  class _Context(RuleContext):
+    def begin(self):
+      super(StripCommentsRule._Context, self).begin()
+
+      # Get all source -> output paths (and ensure directories exist)
+      file_pairs = []
+      for src_path in self.src_paths:
+        out_path = self._get_out_path_for_src(src_path)
+        if self.rule.new_extension:
+          out_path = os.path.splitext(out_path)[0] + self.rule.new_extension
+        self._ensure_output_exists(os.path.dirname(out_path))
+        self._append_output_paths([out_path])
+        file_pairs.append((src_path, out_path))
+
+      # Async issue stripping task
+      d = self._run_task_async(_StripCommentsRuleTask(
+          self.build_env, file_pairs))
+      self._chain(d)
+
+
+class _StripCommentsRuleTask(Task):
+  def __init__(self, build_env, file_pairs, *args, **kwargs):
+    super(_StripCommentsRuleTask, self).__init__(build_env, *args, **kwargs)
+    self.file_pairs = file_pairs
+
+  def execute(self):
+    for file_pair in self.file_pairs:
+      with io.open(file_pair[0], 'rt') as f:
+        raw_str = f.read()
+
+      # Code from Markus Jarderot, posted to stackoverflow
+      def replacer(match):
+        s = match.group(0)
+        if s.startswith('/'):
+            return ""
+        else:
+            return s
+      pattern = re.compile(
+          r'//.*?$|/\*.*?\*/|\'(?:\\.|[^\\\'])*\'|"(?:\\.|[^\\"])*"',
+          re.DOTALL | re.MULTILINE)
+      result_str = re.sub(pattern, replacer, raw_str)
+
+      with io.open(file_pair[1], 'wt') as f:
+        f.write(result_str)
+
     return True
