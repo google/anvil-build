@@ -14,7 +14,7 @@ import string
 
 from anvil.context import RuleContext
 from anvil.rule import Rule, build_rule
-from anvil.task import Task
+from anvil.task import Task, ExecutableTask
 
 
 @build_rule('file_set')
@@ -321,3 +321,41 @@ class _StripCommentsRuleTask(Task):
         f.write(result_str)
 
     return True
+
+
+
+@build_rule('shell_execute')
+class ShellExecuteRule(Rule):
+  """Executes a command on the shell.
+
+  Inputs:
+    srcs: Source file paths. These will be appended to the command line.
+    command: A list of arguments to execute.
+
+  Outputs:
+    None?
+  """
+
+  def __init__(self, name, command, *args, **kwargs):
+    """Initializes a shell execute rule.
+
+    Args:
+      name: Rule name.
+      command: Command arguments.
+    """
+    super(ShellExecuteRule, self).__init__(name, *args, **kwargs)
+    self.command = command
+
+  class _Context(RuleContext):
+    def begin(self):
+      super(ShellExecuteRule._Context, self).begin()
+
+      # Build command line
+      executable_name = self.rule.command[0]
+      call_args = self.rule.command[1:]
+      call_args.extend(self.src_paths)
+
+      # Async issue copying task
+      d = self._run_task_async(ExecutableTask(
+          self.build_env, executable_name, call_args))
+      self._chain(d)
