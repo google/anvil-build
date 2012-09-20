@@ -600,23 +600,6 @@ class RuleContext(object):
           return True
     return False
 
-  def _check_if_cached(self):
-    """Checks if all inputs and outputs match their expected values.
-
-    Returns:
-      True if no inputs or outputs have changed.
-    """
-    # If any input changed...
-    if self.file_delta.any_changes():
-      return False
-
-    # If any output is changed...
-    output_delta = self.build_context.cache.compute_delta(self.all_output_files)
-    if output_delta.any_changes():
-      return False
-
-    return True
-
   def begin(self):
     """Begins asynchronous rule execution.
     Custom RuleContext implementations should override this method to perform
@@ -642,9 +625,28 @@ class RuleContext(object):
 
     # Compute file delta
     # Note that this could be done async (somehow)
-    self.file_delta = self.build_context.cache.compute_delta(self.src_paths)
+    self.file_delta = self.build_context.cache.compute_delta(
+        self.rule.path, 'src', self.src_paths)
 
     return self.deferred
+
+  def _check_if_cached(self):
+    """Checks if all inputs and outputs match their expected values.
+
+    Returns:
+      True if no inputs or outputs have changed.
+    """
+    # If any input changed...
+    if self.file_delta.any_changes():
+      return False
+
+    # If any output is changed...
+    output_delta = self.build_context.cache.compute_delta(
+        self.rule.path, 'out', self.all_output_files)
+    if output_delta.any_changes():
+      return False
+
+    return True
 
   def cascade_failure(self):
     """Instantly fails a rule, signaling that a rule prior to it has failed
