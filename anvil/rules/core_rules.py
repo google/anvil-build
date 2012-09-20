@@ -108,7 +108,7 @@ class _CopyFilesTask(Task):
 
   def execute(self):
     for file_pair in self.file_pairs:
-      shutil.copy(file_pair[0], file_pair[1])
+      shutil.copy2(file_pair[0], file_pair[1])
     return True
 
 
