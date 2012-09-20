@@ -56,6 +56,11 @@ class ArchiveFilesRule(Rule):
       self._ensure_output_exists(os.path.dirname(output_path))
       self._append_output_paths([output_path])
 
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
+
       # Compute the relative archive path for each file
       paths = []
       for src_path in self.src_paths:

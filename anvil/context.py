@@ -17,6 +17,7 @@ import stat
 
 from anvil import async
 from anvil.async import Deferred
+from anvil import cache
 from anvil import graph
 from anvil import project
 from anvil import task
@@ -119,6 +120,9 @@ class BuildContext(object):
 
     # Dictionary that should be used to map rule paths to RuleContexts
     self.rule_contexts = {}
+
+    # Cache used to generate file deltas
+    self.cache = cache.RuleCache()
 
   def __enter__(self):
     return self
@@ -350,6 +354,8 @@ class RuleContext(object):
     self.build_env = build_context.build_env
     self.rule = rule
 
+    self.file_delta = None
+
     self.deferred = Deferred()
     self.status = Status.WAITING
     self.start_time = None
@@ -404,7 +410,6 @@ class RuleContext(object):
     exclude_filter_list = []
     if apply_src_filter and self.rule.src_exclude_filter:
       exclude_filter_list = self.rule.src_exclude_filter.split('|')
-      print 'got filters %s' % (exclude_filter_list)
 
     base_path = os.path.dirname(self.rule.parent_module.path)
     input_paths = []
@@ -594,6 +599,23 @@ class RuleContext(object):
           return True
     return False
 
+  def _check_if_cached(self):
+    """Checks if all inputs and outputs match their expected values.
+
+    Returns:
+      True if no inputs or outputs have changed.
+    """
+    # If any input changed...
+    if self.file_delta.any_changes():
+      return False
+
+    # If any output is changed...
+    output_delta = self.build_context.cache.compute_delta(self.all_output_files)
+    if output_delta.any_changes():
+      return False
+
+    return True
+
   def begin(self):
     """Begins asynchronous rule execution.
     Custom RuleContext implementations should override this method to perform
@@ -616,6 +638,10 @@ class RuleContext(object):
     rel_path = util.strip_implicit_build_name(rel_path)
 
     print '... %20s ~ %s' % (self.rule.rule_name, rel_path)
+
+    # Compute file delta
+    # Note that this could be done async (somehow)
+    self.file_delta = self.build_context.cache.compute_delta(self.src_paths)
 
     return self.deferred
 
@@ -695,19 +721,3 @@ class RuleContext(object):
               break
       self._fail(exception=exception)
     deferred.add_errback_fn(_errback)
-
-
-# class FileDelta(object):
-#   """
-#   TODO(benvanik): move to another module and setup to use cache
-#   """
-
-#   def __init__(self, source_paths=None):
-#     """
-#     Args:
-#       source_paths
-#     """
-#     self.all_files = []
-#     self.added_files = []
-#     self.removed_files = []
-#     self.changed_files = []

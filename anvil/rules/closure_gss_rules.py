@@ -108,6 +108,11 @@ class ClosureGssLibraryRule(Rule):
 
       args.extend(self.src_paths)
 
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
+
       jar_path = self._resolve_input_files([self.rule.compiler_jar])[0]
       d = self._run_task_async(JavaExecutableTask(
           self.build_env, jar_path, args))

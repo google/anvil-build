@@ -60,6 +60,11 @@ class ClosureJsLintRule(Rule):
       super(ClosureJsLintRule._Context, self).begin()
       self._append_output_paths(self.src_paths)
 
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
+
       namespaces = ','.join(self.rule.namespaces)
       args = [
           '--strict',
@@ -69,7 +74,7 @@ class ClosureJsLintRule(Rule):
 
       # TODO(benvanik): only changed paths
       # Exclude any path containing build-*
-      for src_path in self.src_paths:
+      for src_path in self.file_delta.changed_files:
         if (src_path.find('build-out%s' % os.sep) == -1 and
             src_path.find('build-gen%s' % os.sep) == -1):
           args.append(src_path)
@@ -264,6 +269,11 @@ class ClosureJsLibraryRule(Rule):
       deps_js_path = self._get_out_path(name=deps_name, suffix='-deps.js')
       self._ensure_output_exists(os.path.dirname(deps_js_path))
       self._append_output_paths([deps_js_path])
+
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
 
       # Issue dependency scanning to build the deps graph
       d = self._run_task_async(_ScanJsDependenciesTask(

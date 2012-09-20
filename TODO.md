@@ -1,6 +1,10 @@
 foo#*.ext for src_filter on input side
   removes extra intermediate rules (*.css only from set)
 
+Caching
+==============================================================
+
+
 
 Stages
 ==============================================================

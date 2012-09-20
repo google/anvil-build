@@ -90,6 +90,11 @@ class CopyFilesRule(Rule):
         self._append_output_paths([out_path])
         file_pairs.append((src_path, out_path))
 
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
+
       # Async issue copying task
       d = self._run_task_async(_CopyFilesTask(
           self.build_env, file_pairs))
@@ -146,6 +151,11 @@ class ConcatFilesRule(Rule):
       output_path = self._get_out_path(name=self.rule.out)
       self._ensure_output_exists(os.path.dirname(output_path))
       self._append_output_paths([output_path])
+
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
 
       # Async issue concat task
       d = self._run_task_async(_ConcatFilesTask(
@@ -221,6 +231,11 @@ class TemplateFilesRule(Rule):
         self._append_output_paths([out_path])
         file_pairs.append((src_path, out_path))
 
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
+
       # Async issue templating task
       d = self._run_task_async(_TemplateFilesTask(
           self.build_env, file_pairs, self.rule.params))
@@ -289,6 +304,11 @@ class StripCommentsRule(Rule):
         self._append_output_paths([out_path])
         file_pairs.append((src_path, out_path))
 
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
+
       # Async issue stripping task
       d = self._run_task_async(_StripCommentsRuleTask(
           self.build_env, file_pairs))
@@ -354,6 +374,11 @@ class ShellExecuteRule(Rule):
       executable_name = self.rule.command[0]
       call_args = self.rule.command[1:]
       call_args.extend(self.src_paths)
+
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
 
       # Async issue copying task
       d = self._run_task_async(ExecutableTask(
