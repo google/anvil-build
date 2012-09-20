@@ -90,18 +90,33 @@ class FileRuleCache(RuleCache):
     old_data = self.data.get(key, None)
     self.data[key] = new_data
 
-    # No previous data - ignore
-    if not old_data:
-      self._dirty = True
-      file_delta.changed_files.extend(src_paths)
+    # No previous data
+    if old_data is None:
+      if len(src_paths):
+        self._dirty = True
+        file_delta.changed_files.extend(src_paths)
       return file_delta
 
-    # Compare data
+    # Find added/modified files
+    for (new_path, new_key) in new_data.items():
+      old_key = old_data.get(new_path, None)
+      if old_key:
+        # File exists in both old/new, compare keys to see if modified
+        if old_key != new_key:
+          file_delta.modified_files.append(new_path)
+      else:
+        # File exists in new but not old, added
+        file_delta.added_files.append(new_path)
 
-    # TODO(benvanik): work
-    self._dirty = True
-    file_delta.changed_files.extend(src_paths)
+    # Find removed files
+    for old_path in old_data.keys():
+      if not old_path in new_data:
+        file_delta.removed_files.append(old_path)
 
+    file_delta.changed_files.extend(file_delta.added_files)
+    file_delta.changed_files.extend(file_delta.modified_files)
+    if len(file_delta.changed_files) or len(file_delta.removed_files):
+      self._dirty = True
     return file_delta
 
 

@@ -640,10 +640,10 @@ class RuleContext(object):
     if self.file_delta.any_changes():
       return False
 
-    # If any output is changed...
+    # If any output was removed...
     output_delta = self.build_context.cache.compute_delta(
         self.rule.path, 'out', self.all_output_files)
-    if output_delta.any_changes():
+    if len(output_delta.removed_files):
       return False
 
     return True
