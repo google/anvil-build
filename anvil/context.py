@@ -85,13 +85,14 @@ class BuildContext(object):
   """
 
   def __init__(self, build_env, project,
-               task_executor=None, force=False,
+               rule_cache=None, task_executor=None, force=False,
                stop_on_error=False, raise_on_error=False):
     """Initializes a build context.
 
     Args:
       build_env: Current build environment.
       project: Project to use for building.
+      rule_cache: Cache to use for rules.
       task_executor: Task executor to use. One will be created if none is
           passed.
       force: True to force execution of tasks even if they have not changed.
@@ -122,7 +123,7 @@ class BuildContext(object):
     self.rule_contexts = {}
 
     # Cache used to generate file deltas
-    self.cache = cache.RuleCache()
+    self.cache = rule_cache or cache.RuleCache()
 
   def __enter__(self):
     return self
@@ -667,6 +668,7 @@ class RuleContext(object):
     """
     self.status = Status.SUCCEEDED
     self.end_time = util.timer()
+    self.build_context.cache.save()
     self.deferred.callback()
 
   def _fail(self, exception=None, *args, **kwargs):
