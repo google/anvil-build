@@ -81,9 +81,10 @@ class FileRuleCache(RuleCache):
     # TODO(benvanik): make this parallel
     new_data = dict()
     for src_path in src_paths:
-      file_time = os.path.getmtime(src_path)
-      file_size = os.path.getsize(src_path)
-      new_data[src_path] = '%s-%s' % (file_time, file_size)
+      if os.path.exists(src_path):
+        file_time = os.path.getmtime(src_path)
+        file_size = os.path.getsize(src_path)
+        new_data[src_path] = '%s-%s' % (file_time, file_size)
 
     # Always swap for new data
     key = base64.b64encode('%s->%s' % (rule_path, mode))
