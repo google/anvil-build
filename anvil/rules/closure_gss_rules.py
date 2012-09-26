@@ -80,6 +80,8 @@ class ClosureGssLibraryRule(Rule):
       args = []
       args.extend(self.rule.compiler_flags)
 
+      args.extend(['--allowed-non-standard-function', 'color-stop'])
+
       needs_map_file = False
       if self.rule.mode == 'MINIFIED':
         args.extend(['--rename', 'NONE'])
