@@ -140,7 +140,7 @@ class ExecutableTask(Task):
   If the call returns an error an ExecutableError is raised.
   """
 
-  def __init__(self, build_env, executable_name, call_args=None,
+  def __init__(self, build_env, executable_name, call_args=None, env=None,
                *args, **kwargs):
     """Initializes an executable task.
 
@@ -148,18 +148,23 @@ class ExecutableTask(Task):
       build_env: The build environment for state.
       executable_name: The name (or full path) of an executable.
       call_args: Arguments to pass to the executable.
+      env: Additional environment variables.
     """
     super(ExecutableTask, self).__init__(build_env, *args, **kwargs)
     self.executable_name = executable_name
-    self.call_args = call_args if call_args else []
+    self.call_args = call_args[:] if call_args else []
+    self.env = env.copy() if env else {}
 
   def execute(self):
     #print self.executable_name, self.call_args
     try:
+      env = os.environ.copy()
+      env.update(self.env)
       p = subprocess.Popen([self.executable_name] + self.call_args,
                            bufsize=-1, # system default
                            stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
+                           stderr=subprocess.PIPE,
+                           env=env)
     except:
       print 'unable to open process'
       raise ExecutableError()

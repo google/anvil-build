@@ -36,17 +36,21 @@ class ClosureJsLintRule(Rule):
   Inputs:
     srcs: Source JS file paths.
     namespaces: A list of Closurized namespaces.
+    linter_path: Path to the closure_linter module. If omitted the system
+        gjslint will be used.
 
   Outputs:
     All of the source file paths, passed-through unmodified.
   """
 
-  def __init__(self, name, namespaces, *args, **kwargs):
+  def __init__(self, name, namespaces, linter_path=None, *args, **kwargs):
     """Initializes a Closure JS lint rule.
 
     Args:
       name: Rule name.
       namespaces: A list of Closurized namespaces.
+      linter_path: Path to the closure_linter module. If omitted the system
+          gjslint will be used.
     """
     super(ClosureJsLintRule, self).__init__(name, *args, **kwargs)
     self.src_filter = '*.js'
@@ -54,6 +58,7 @@ class ClosureJsLintRule(Rule):
     self._extra_args = ['--nobeep',]
     self.namespaces = []
     self.namespaces.extend(namespaces)
+    self.linter_path = linter_path
 
   class _Context(RuleContext):
     def begin(self):
@@ -72,6 +77,19 @@ class ClosureJsLintRule(Rule):
           '--closurized_namespaces=%s' % (namespaces),
           ]
 
+      command = self.rule._command
+      env = None
+      if self.rule.linter_path:
+        command = 'python'
+        env = {
+            'PYTHONPATH': self.rule.linter_path,
+            }
+        args = [
+            os.path.join(
+                self.rule.linter_path,
+                'closure_linter/%s.py' % (self.rule._command)),
+            ] + args
+
       # TODO(benvanik): only changed paths
       # Exclude any path containing build-*
       for src_path in self.file_delta.changed_files:
@@ -80,7 +98,7 @@ class ClosureJsLintRule(Rule):
           args.append(src_path)
 
       d = self._run_task_async(ExecutableTask(
-          self.build_env, self.rule._command, args))
+          self.build_env, command, args, env=env))
       # TODO(benvanik): pull out errors?
       self._chain(d)
 
@@ -100,20 +118,24 @@ class ClosureJsFixStyleRule(ClosureJsLintRule):
   Inputs:
     srcs: Source JS file paths.
     namespaces: A list of Closurized namespaces.
+    linter_path: Path to the closure_linter module. If omitted the system
+        gjslint will be used.
 
   Outputs:
     All of the source file paths, passed-through post-correction.
   """
 
-  def __init__(self, name, namespaces, *args, **kwargs):
+  def __init__(self, name, namespaces, linter_path=None, *args, **kwargs):
     """Initializes a Closure JS style fixing rule.
 
     Args:
       name: Rule name.
       namespaces: A list of Closurized namespaces.
+      linter_path: Path to the closure_linter module. If omitted the system
+          gjslint will be used.
     """
     super(ClosureJsFixStyleRule, self).__init__(name, namespaces,
-        *args, **kwargs)
+        linter_path=linter_path, *args, **kwargs)
     self._command = 'fixjsstyle'
     self._extra_args = []
 
