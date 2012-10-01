@@ -67,7 +67,7 @@ class DependsCommand(ManageCommand):
     dep_manager = DependencyManager(cwd=cwd)
     dependencies = dep_manager.scan_dependencies(args.targets)
 
-    if not len(requirements):
+    if not len(dependencies):
       print 'No requirements found'
       return True
 
