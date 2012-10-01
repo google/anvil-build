@@ -22,6 +22,18 @@ Features
 * Extensible rule definitions
  * Simple Python to add custom data formats or actions
 
+JavaScript Bootstrap
+--------------------
+
+Want to use anvil in a new JavaScript project? This is the easiest way:
+
+    wget https://raw.github.com/gist/3814397/anvil-bootstrap.sh
+    chmod +x anvil-bootstrap.sh
+    ./anvil-bootstrap.sh my-project mp "Your Name"
+    # this will create my-project/, git init, with 'mp' as the namespace for things
+    cd my-project/
+    anvil build :release
+
 Getting Started
 ---------------
   
