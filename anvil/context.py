@@ -472,6 +472,22 @@ class RuleContext(object):
     rel_path = os.path.relpath(module_path, root_path)
     return os.path.normpath(os.path.join(base_path, rel_path, name))
 
+  def _get_root_path(self, name=None, suffix=None):
+    """Gets the path of the given output in the root path.
+
+    Always prefer _get_out_path and _get_gen_path.
+
+    Args:
+      name: If a name is provided it will be used instead of the rule name.
+      suffix: Suffix to add to whatever path is built, such as '.txt' to add
+          an extension.
+
+    Returns:
+      A full path that can be used to write a file to the proper root path.
+    """
+    base_path = self.build_context.build_env.root_path
+    return self.__get_target_path(base_path, name=name, suffix=suffix)
+
   def _get_out_path(self, name=None, suffix=None):
     """Gets the 'out' path for an output.
     If no name is provided then the rule name will be used.
