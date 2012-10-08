@@ -13,25 +13,8 @@ import unittest2
 
 from anvil.context import BuildContext, BuildEnvironment, Status
 from anvil.project import FileModuleResolver, Project
-from anvil.test import FixtureTestCase
+from anvil.test import FixtureTestCase, RuleTestCase
 from core_rules import *
-
-
-class RuleTestCase(FixtureTestCase):
-  def assertRuleResultsEqual(self, build_ctx, rule_path, expected_file_matches,
-      output_prefix=''):
-    results = build_ctx.get_rule_results(rule_path)
-    self.assertEqual(results[0], Status.SUCCEEDED)
-    output_paths = results[1]
-
-    fixed_expected = [os.path.normpath(f) for f in expected_file_matches]
-
-    root_path = os.path.join(build_ctx.build_env.root_path, output_prefix)
-    result_file_list = \
-        [os.path.normpath(os.path.relpath(f, root_path)) for f in output_paths]
-    self.assertEqual(
-        set(result_file_list),
-        set(fixed_expected))
 
 
 class FileSetRuleTest(RuleTestCase):

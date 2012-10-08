@@ -13,6 +13,7 @@ import shutil
 import sys
 import unittest2
 
+from anvil.context import Status
 from anvil import util
 
 
@@ -133,3 +134,20 @@ class FixtureTestCase(AsyncTestCase):
     with io.open(path, 'rt') as f:
       file_contents = f.read()
     self.assertEqual(file_contents, contents)
+
+
+class RuleTestCase(FixtureTestCase):
+  def assertRuleResultsEqual(self, build_ctx, rule_path, expected_file_matches,
+      output_prefix=''):
+    results = build_ctx.get_rule_results(rule_path)
+    self.assertEqual(results[0], Status.SUCCEEDED)
+    output_paths = results[1]
+
+    fixed_expected = [os.path.normpath(f) for f in expected_file_matches]
+
+    root_path = os.path.join(build_ctx.build_env.root_path, output_prefix)
+    result_file_list = \
+        [os.path.normpath(os.path.relpath(f, root_path)) for f in output_paths]
+    self.assertEqual(
+        set(result_file_list),
+        set(fixed_expected))

@@ -98,11 +98,13 @@ class CopyFilesRule(Rule):
         rel_path = anvil.util.strip_build_paths(rel_path)
         for prefix in self.rule.flatten_paths:
           rel_path = rel_path.replace(prefix, '')
+        rel_path = os.path.normpath(rel_path)
         if self.rule.out:
           out_path = os.path.join(self.rule.out, rel_path)
           out_path = self._get_out_path(name=out_path)
         else:
-          out_path = self._get_out_path_for_src(rel_path)
+          out_path = self._get_out_path_for_src(
+              os.path.join(self.build_env.root_path, rel_path))
         self._ensure_output_exists(os.path.dirname(out_path))
         self._append_output_paths([out_path])
         file_pairs.append((src_path, out_path))

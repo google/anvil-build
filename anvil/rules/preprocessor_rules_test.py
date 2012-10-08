@@ -13,13 +13,13 @@ import unittest2
 
 from anvil.context import BuildContext, BuildEnvironment, Status
 from anvil.project import FileModuleResolver, Project
-from anvil.test import FixtureTestCase
+from anvil.test import FixtureTestCase, RuleTestCase
 from preprocessor_rules import *
 
 
 class TemplateFilesRuleTest(RuleTestCase):
   """Behavioral tests of the TemplateFilesRule type."""
-  fixture='core_rules/template_files'
+  fixture='preprocessor_rules/template_files'
 
   def setUp(self):
     super(TemplateFilesRuleTest, self).setUp()
