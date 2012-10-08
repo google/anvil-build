@@ -174,7 +174,10 @@ class ClosureJsLibraryRule(Rule):
     out: Optional output name. If none is provided than the rule name will be
         used.
     deps_out: Base name for -deps.js file.
-        Example: 'library' -> 'library-deps.js'
+        Example - 'library' -> 'library-deps.js'
+    file_list_out: A list of files in sorted order required for the given
+        entry points.
+        Example - 'all_files.txt'
 
   Outputs:
     A single compiled JS file. If no out is specified a file with the name of
@@ -184,7 +187,7 @@ class ClosureJsLibraryRule(Rule):
   def __init__(self, name, mode, compiler_jar, entry_points,
         pretty_print=False, debug=False,
         compiler_flags=None, externs=None, wrap_with_global=None,
-        out=None, deps_out=None,
+        out=None, deps_out=None, file_list_out=None,
         *args, **kwargs):
     """Initializes a Closure JS library rule.
 
@@ -202,7 +205,10 @@ class ClosureJsLibraryRule(Rule):
           Example - 'global' -> (function(){...code...}).call(global);
       out: Optional output name.
       deps_out: Base name for -deps.js file.
-          Example: 'library' -> 'library-deps.js'
+          Example - 'library' -> 'library-deps.js'
+      file_list_out: A list of files in sorted order required for the given
+          entry points.
+          Example - 'all_files.txt'
     """
     super(ClosureJsLibraryRule, self).__init__(name, *args, **kwargs)
     self.src_filter = '*.js'
@@ -230,6 +236,7 @@ class ClosureJsLibraryRule(Rule):
     self.wrap_with_global = wrap_with_global
     self.out = out
     self.deps_out = deps_out
+    self.file_list_out = file_list_out
 
   class _Context(RuleContext):
     def begin(self):
@@ -292,6 +299,13 @@ class ClosureJsLibraryRule(Rule):
       self._ensure_output_exists(os.path.dirname(deps_js_path))
       self._append_output_paths([deps_js_path])
 
+      # File manifest
+      file_list_path = None
+      if self.rule.file_list_out:
+        file_list_path = self._get_out_path(name=self.rule.file_list_out)
+        self._ensure_output_exists(os.path.dirname(file_list_path))
+        self._append_output_paths([file_list_path])
+
       # Skip if cache hit
       if self._check_if_cached():
         self._succeed()
@@ -311,6 +325,14 @@ class ClosureJsLibraryRule(Rule):
         # Generate/write JS deps
         ds.append(self._run_task_async(WriteFileTask(
             self.build_env, dep_graph.get_deps_js(), deps_js_path)))
+
+        # Generate/write manifest
+        if file_list_path:
+          rel_used_paths = [
+              os.path.relpath(path, self._get_rule_path())
+              for path in used_paths]
+          ds.append(self._run_task_async(WriteFileTask(
+              self.build_env, u'\n'.join(rel_used_paths), file_list_path)))
 
         # Compile main lib
         if compiling:
