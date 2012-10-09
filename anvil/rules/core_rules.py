@@ -50,6 +50,64 @@ class FileSetRule(Rule):
       self._succeed()
 
 
+@build_rule('copy_file')
+class CopyFileRule(Rule):
+  """Copies a single file into the given output path.
+  This is like a
+
+  This rule requires an explicit output path. If you want a more generalized
+  copy rule see copy_files.
+
+  Inputs:
+    srcs: Source file path. Must only be one.
+    base_path: Base path (one of 'gen', 'out', 'root').
+    target: Target path.
+
+  Outputs:
+    The one copied file in the output path.
+  """
+
+  def __init__(self, name, base_path, target, *args, **kwargs):
+    """Initializes a copy file rule.
+
+    Args:
+      name: Rule name.
+      base_path: Base path (one of 'gen', 'out', 'root').
+      target: Target path.
+    """
+    super(CopyFileRule, self).__init__(name, *args, **kwargs)
+    self.base_path = base_path
+    self.target = target
+
+  class _Context(RuleContext):
+    def begin(self):
+      super(CopyFileRule._Context, self).begin()
+
+      file_pairs = []
+
+      # Get all source -> output paths (and ensure directories exist)
+      src_path = self.src_paths[0]
+      if self.rule.base_path == 'gen':
+        out_path = self._get_gen_path(name=self.rule.target)
+      elif self.rule.base_path == 'out':
+        out_path = self._get_out_path(name=self.rule.target)
+      else:
+        out_path = self._get_root_path(name=self.rule.target)
+      self._ensure_output_exists(os.path.dirname(out_path))
+      self._append_output_paths([out_path])
+      file_pairs.append((src_path, out_path))
+
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
+
+      # Async issue copying task
+      d = self._run_task_async(_CopyFilesTask(
+          self.build_env, file_pairs))
+      self._chain(d)
+
+
 @build_rule('copy_files')
 class CopyFilesRule(Rule):
   """Copy files from one path to another.
