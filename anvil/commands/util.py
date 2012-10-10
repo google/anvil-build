@@ -9,7 +9,7 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 import os
 import shutil
 
-from anvil.cache import FileRuleCache
+from anvil.cache import RuleCache, FileRuleCache
 from anvil.context import BuildEnvironment, BuildContext
 from anvil.project import FileModuleResolver, Project
 from anvil.task import InProcessTaskExecutor, MultiProcessTaskExecutor
@@ -74,11 +74,17 @@ def run_build(cwd, parsed_args):
   #     info?
   print 'building %s' % (parsed_args.targets)
 
+  # Setup cache
+  if not parsed_args.force:
+    cache_path = os.getcwd()
+    rule_cache = FileRuleCache(cache_path)
+  else:
+    rule_cache = RuleCache()
+
   # TODO(benvanik): take additional args from command line
-  cache_path = os.getcwd()
   all_target_outputs = set([])
   with BuildContext(build_env, project,
-                    rule_cache=FileRuleCache(cache_path),
+                    rule_cache=rule_cache,
                     task_executor=task_executor,
                     force=parsed_args.force,
                     stop_on_error=parsed_args.stop_on_error,

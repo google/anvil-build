@@ -38,6 +38,7 @@ class RuleCache(object):
     """
     file_delta = FileDelta()
     file_delta.all_files.extend(src_paths)
+    file_delta.added_files.extend(src_paths)
     file_delta.changed_files.extend(src_paths)
     return file_delta
 
