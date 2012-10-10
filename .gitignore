@@ -50,6 +50,7 @@ npm-debug.log
 # ==============================================================================
 
 # Python
+local_virtualenv/
 *.egg-info
 build/
 dist/
