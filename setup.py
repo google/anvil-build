@@ -44,7 +44,7 @@ INSTALL_REQUIRES = [
     'argparse>=1.2.1',
     'autobahn>=0.5.1',
     'glob2>=0.3',
-    'networkx==1.6',
+    'networkx==1.7',
     'pip>=1.1',
     'Sphinx>=1.1.3',
     'watchdog>=0.6',

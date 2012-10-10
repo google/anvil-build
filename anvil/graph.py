@@ -28,7 +28,7 @@ class RuleGraph(object):
     """
     self.project = project
     self.graph = nx.DiGraph()
-    # A map of rule paths to nodes, if they exist
+    # A map of rule paths to rules, if they exist
     self.rule_nodes = {}
 
   def has_dependency(self, rule_path, predecessor_rule_path):
@@ -44,13 +44,11 @@ class RuleGraph(object):
     Raises:
       KeyError: One of the given rules was not found.
     """
-    rule_node = self.rule_nodes.get(rule_path, None)
-    if not rule_node:
+    if not rule_path in self.rule_nodes:
       raise KeyError('Rule "%s" not found' % (rule_path))
-    predecessor_rule_node = self.rule_nodes.get(predecessor_rule_path, None)
-    if not predecessor_rule_node:
+    if not predecessor_rule_path in self.rule_nodes:
       raise KeyError('Rule "%s" not found' % (predecessor_rule_path))
-    return nx.has_path(self.graph, predecessor_rule_node, rule_node)
+    return nx.has_path(self.graph, predecessor_rule_path, rule_path)
 
   def _ensure_rules_present(self, rule_paths, requesting_module=None):
     """Ensures that the given list of rules are present in the graph, and if not
@@ -72,13 +70,12 @@ class RuleGraph(object):
       rules.append(rule)
 
       # If already present, ignore (no need to recurse)
-      if self.rule_nodes.has_key(rule.path):
+      if rule.path in self.rule_nodes:
         continue
 
-      # Wrap with our node and add it to the graph
-      rule_node = _RuleNode(rule)
-      self.rule_nodes[rule.path] = rule_node
-      self.graph.add_node(rule_node)
+      # Add node to the graph
+      self.rule_nodes[rule.path] = rule
+      self.graph.add_node(rule.path)
 
       # Recursively resolve all dependent rules
       dependent_rule_paths = []
@@ -92,15 +89,13 @@ class RuleGraph(object):
     # Add edges for all of the requested rules (at this point, all rules should
     # be added to the graph)
     for rule in rules:
-      rule_node = self.rule_nodes[rule.path]
-      for dep in rule_node.rule.get_dependent_paths():
+      for dep in rule.get_dependent_paths():
         if util.is_rule_path(dep):
           dep_rule = self.project.resolve_rule(dep,
               requesting_module=rule.parent_module)
-          dep_node = self.rule_nodes.get(dep_rule.path, None)
           # Node should exist due to recursive addition above
-          assert dep_node
-          self.graph.add_edge(dep_node, rule_node)
+          assert dep_rule.path in self.rule_nodes
+          self.graph.add_edge(dep_rule.path, rule.path)
 
     # Ensure the graph is a DAG (no cycles)
     if not nx.is_directed_acyclic_graph(self.graph):
@@ -128,7 +123,7 @@ class RuleGraph(object):
     Returns:
       True if the given rule has been resolved and added to the graph.
     """
-    return self.rule_nodes.get(rule_path, None) != None
+    return rule_path in self.rule_nodes
 
   def calculate_rule_sequence(self, target_rule_paths):
     """Calculates an ordered sequence of rules terminating with the given
@@ -171,7 +166,7 @@ class RuleGraph(object):
       # Add node
       sequence_graph.add_node(rule_node)
       # Recursively add all dependent children
-      for out_edge in reverse_graph.out_edges_iter(rule_node):
+      for out_edge in reverse_graph.out_edges_iter([rule_node]):
         out_rule_node = out_edge[1]
         if not sequence_graph.has_node(out_rule_node):
           _add_rule_node_dependencies(out_rule_node)
@@ -182,9 +177,8 @@ class RuleGraph(object):
     for rule_path in target_rule_paths:
       rule = self.project.resolve_rule(rule_path)
       assert rule
-      rule_node = self.rule_nodes.get(rule.path, None)
-      assert rule_node
-      _add_rule_node_dependencies(rule_node)
+      assert rule.path in self.rule_nodes
+      _add_rule_node_dependencies(rule.path)
 
     # Reverse the graph so that it's dependencies -> targets
     reversed_sequence_graph = sequence_graph.reverse()
@@ -192,19 +186,5 @@ class RuleGraph(object):
     # Get the list of nodes in sorted order
     rule_sequence = []
     for rule_node in nx.topological_sort(reversed_sequence_graph):
-      rule_sequence.append(rule_node.rule)
+      rule_sequence.append(self.rule_nodes[rule_node])
     return rule_sequence
-
-class _RuleNode(object):
-  """A node type that references a rule in the project."""
-
-  def __init__(self, rule):
-    """Initializes a rule node.
-
-    Args:
-      rule: The rule this node describes.
-    """
-    self.rule = rule
-
-  def __repr__(self):
-    return self.rule.path
