@@ -98,7 +98,8 @@ class ClosureJsLintRule(Rule):
           args.append(src_path)
 
       d = self._run_task_async(ExecutableTask(
-          self.build_env, command, args, env=env))
+          self.build_env, command, args, env=env,
+          pretty_name=str(self.rule)))
       # TODO(benvanik): pull out errors?
       self._chain(d)
 
@@ -339,7 +340,8 @@ class ClosureJsLibraryRule(Rule):
           for src_path in used_paths:
             args.append('--js=%s' % (src_path))
           ds.append(self._run_task_async(JavaExecutableTask(
-              self.build_env, jar_path, args)))
+              self.build_env, jar_path, args,
+              pretty_name=str(self.rule))))
           # TODO(benvanik): pull out (stdout, stderr) from result and the
           #     exception to get better error logging
         else:

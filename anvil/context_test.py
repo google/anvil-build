@@ -150,7 +150,7 @@ class BuildContextTest(FixtureTestCase):
       results = ctx.get_rule_results('m:a')
       self.assertEqual(results[0], Status.FAILED)
       results = ctx.get_rule_results('m:b')
-      self.assertEqual(results[0], Status.FAILED)
+      self.assertEqual(results[0], Status.WAITING)
 
     project = Project(modules=[Module('m', rules=[
         FailRule('a'),

@@ -191,8 +191,9 @@ class BuildContext(object):
 
     any_failed = [False]
     main_deferred = Deferred()
-    remaining_rules = deque(rule_sequence)
+    remaining_rules = rule_sequence[:]
     in_flight_rules = []
+    pumping = [False]
 
     def _issue_rule(rule):
       """Issues a single rule into the current execution context.
@@ -234,24 +235,58 @@ class BuildContext(object):
       # to finish
       if not previous_succeeded:
         any_failed[0] = True
-      if not previous_succeeded and self.stop_on_error:
-        remaining_rules.clear()
+      if any_failed[0] and self.stop_on_error:
+        remaining_rules[:] = []
+        # TODO(benvanik): better error message
+        main_deferred.errback()
+        return
 
-      if len(remaining_rules):
-        # Peek the next rule
-        next_rule = remaining_rules[0]
+      if pumping[0]:
+        return
+      pumping[0] = True
 
-        # See if it has any dependency on currently running rules
+      # Scan through all remaining rules - if any are unblocked, issue them
+      to_issue = []
+      for i in range(0, len(remaining_rules)):
+        next_rule = remaining_rules[i]
+
+        # Ignore if any dependency on any rule before it in the list
+        skip_rule = False
+        if i:
+          for old_rule in remaining_rules[:i - 1]:
+            if self.rule_graph.has_dependency(next_rule.path, old_rule.path):
+              # Blocked on previous rule
+              skip_rule = True
+              break
+          if skip_rule:
+            continue
+
+        # Ignore if any dependency on an in-flight rule
         for in_flight_rule in in_flight_rules:
           if self.rule_graph.has_dependency(next_rule.path,
                                             in_flight_rule.path):
             # Blocked on a previous rule, so pass and wait for the next pump
-            return
+            skip_rule = True
+            break
+        if skip_rule:
+          continue
 
-        # If here then we found no conflicting rules, so run!
-        remaining_rules.popleft()
-        _issue_rule(next_rule)
-      else:
+        # If here then we found no conflicting rules, queue for running
+        to_issue.append(next_rule)
+
+      # Run all rules that we can
+      for rule in to_issue:
+        remaining_rules.remove(rule)
+      for rule in to_issue:
+        _issue_rule(rule)
+        if any_failed[0]:
+          break
+
+      if (not len(remaining_rules) and
+          not len(in_flight_rules) and
+          not main_deferred.is_done()):
+        assert not len(remaining_rules)
+
         # Done!
         # TODO(benvanik): better errbacks? some kind of BuildResults?
         if not any_failed[0]:
@@ -259,7 +294,13 @@ class BuildContext(object):
         else:
           main_deferred.errback()
 
-    # Kick off execution (once for each rule as a heuristic for flooding the
+      pumping[0] = False
+
+      # Keep the queue pumping
+      if not len(in_flight_rules) and len(remaining_rules):
+        _pump()
+
+    # Kick off execution (once for each rule as a heuristic for filling the
     # pipeline)
     for rule in rule_sequence:
       _pump()

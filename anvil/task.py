@@ -32,13 +32,14 @@ class Task(object):
       log/progress messages?
   """
 
-  def __init__(self, build_env, *args, **kwargs):
+  def __init__(self, build_env, pretty_name=None, *args, **kwargs):
     """Initializes a task.
 
     Args:
       build_env: The build environment for state.
     """
     self.build_env = build_env
+    self.pretty_name = pretty_name or str(self)
 
   def execute(self):
     """Executes the task.
@@ -173,10 +174,13 @@ class ExecutableTask(Task):
     #     streaming output from the process (for watching progress/etc).
     #     This right now just waits until it exits and grabs everything.
     (stdoutdata, stderrdata) = p.communicate()
-    if len(stdoutdata):
-      print stdoutdata
-    if len(stderrdata):
-      print stderrdata
+
+    if len(stdoutdata) or len(stderrdata):
+      print '\n%s:' % (self.pretty_name)
+      if len(stdoutdata):
+        print stdoutdata
+      if len(stderrdata):
+        print stderrdata
 
     return_code = p.returncode
     if return_code != 0:
@@ -459,6 +463,7 @@ def _task_thunk(task): # pragma: no cover
     The result of the task execution. This is passed to the deferred.
   """
   try:
-    return task.execute()
+    result = task.execute()
+    return result
   except Exception as e:
     return e
