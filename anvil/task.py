@@ -198,7 +198,9 @@ class JavaExecutableTask(ExecutableTask):
       call_args: Arguments to pass to the executable.
     """
     executable_name = 'java'
-    call_args = ['-jar', jar_path] + call_args if call_args else []
+    call_args = [
+        '-client',
+        '-jar', jar_path] + call_args if call_args else []
     super(JavaExecutableTask, self).__init__(build_env, executable_name,
         call_args, *args, **kwargs)
 
