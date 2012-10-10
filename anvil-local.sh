@@ -7,12 +7,15 @@
 # to invoke if it notices things not quite right).
 
 
+DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+
 # Check to see if setup.
-if [ ! -d "local_virtualenv" ]; then
+if [ ! -d "$DIR/local_virtualenv" ]; then
   echo "Missing local virtualenv - setting up..."
-  ./setup-local.sh
+  $DIR/setup-local.sh
 fi
 
 
-source local_virtualenv/bin/activate
-python anvil/manage.py "$@"
+source $DIR/local_virtualenv/bin/activate
+python $DIR/anvil/manage.py "$@"
