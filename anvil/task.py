@@ -122,7 +122,7 @@ class ExecutableError(Exception):
   """An exception concerning the execution of a command.
   """
 
-  def __init__(self, return_code, *args, **kwargs):
+  def __init__(self, return_code=-1, *args, **kwargs):
     """Initializes an executable error.
 
     Args:

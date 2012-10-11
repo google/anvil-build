@@ -211,6 +211,7 @@ class BuildContext(object):
         # TODO(benvanik): log result/exception/etc?
         if exception: # pragma: no cover
           print exception
+        any_failed[0] = True
         _pump(previous_succeeded=False)
 
       in_flight_rules.append(rule)
@@ -233,8 +234,6 @@ class BuildContext(object):
       # killing all future rules
       # This is better than terminating immediately, as it allows legit tasks
       # to finish
-      if not previous_succeeded:
-        any_failed[0] = True
       if any_failed[0] and self.stop_on_error:
         remaining_rules[:] = []
         # TODO(benvanik): better error message
@@ -279,8 +278,6 @@ class BuildContext(object):
         remaining_rules.remove(rule)
       for rule in to_issue:
         _issue_rule(rule)
-        if any_failed[0]:
-          break
 
       if (not len(remaining_rules) and
           not len(in_flight_rules) and
@@ -290,6 +287,11 @@ class BuildContext(object):
         # Done!
         # TODO(benvanik): better errbacks? some kind of BuildResults?
         if not any_failed[0]:
+          # Only save the cache when we have succeeded
+          # This causes some stuff to be rebuilt in failure cases, but prevents
+          # a lot of weirdness when things are partially broken
+          self.cache.save()
+
           main_deferred.callback()
         else:
           main_deferred.errback()
@@ -727,7 +729,6 @@ class RuleContext(object):
     """
     self.status = Status.SUCCEEDED
     self.end_time = util.timer()
-    self.build_context.cache.save()
     self.deferred.callback()
 
   def _fail(self, exception=None, *args, **kwargs):
