@@ -150,7 +150,7 @@ class BuildContextTest(FixtureTestCase):
       results = ctx.get_rule_results('m:a')
       self.assertEqual(results[0], Status.FAILED)
       results = ctx.get_rule_results('m:b')
-      self.assertEqual(results[0], Status.WAITING)
+      self.assertEqual(results[0], Status.FAILED)
 
     project = Project(modules=[Module('m', rules=[
         FailRule('a'),
@@ -162,7 +162,7 @@ class BuildContextTest(FixtureTestCase):
       results = ctx.get_rule_results('m:a')
       self.assertEqual(results[0], Status.FAILED)
       results = ctx.get_rule_results('m:b')
-      self.assertEqual(results[0], Status.WAITING)
+      self.assertEqual(results[0], Status.FAILED)
 
     # TODO(benvanik): test stop_on_error
     # TODO(benvanik): test raise_on_error
