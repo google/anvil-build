@@ -48,6 +48,9 @@ INSTALL_REQUIRES = [
     'pip>=1.1',
     'Sphinx>=1.1.3',
     'watchdog>=0.6',
+
+    # Needed for the linter - easier to just have here
+    'python-gflags',
     ]
 
 TESTS_REQUIRE = [
