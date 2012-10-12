@@ -8,6 +8,9 @@
 # invoke anvil-local.sh instead of the global 'anvil'.
 
 
+DIR="$( cd "$( dirname "$0" )" && pwd )"
+
+
 # Ensure virtualenv is present.
 if [ ! -e "$(which virtualenv)" ]; then
   echo "virtualenv not found - installing..."
@@ -23,8 +26,9 @@ if [ ! -e "$(which virtualenv)" ]; then
 fi
 
 # Setup the virtual environment.
-/usr/local/lib/python2.6/dist-packages/virtualenv-1.8.2-py2.6.egg/virtualenv.py local_virtualenv
+virtualenv $DIR/local_virtualenv
 
 # Install there.
-source local_virtualenv/bin/activate
+source $DIR/local_virtualenv/bin/activate
+cd $DIR
 python setup.py develop
