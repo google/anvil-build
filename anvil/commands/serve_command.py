@@ -77,6 +77,11 @@ class ServeCommand(ManageCommand):
       port: TCP port to listen on.
       root_path: Root path of the HTTP server.
     """
+    # Twisted has a bug where it doesn't properly initialize mimetypes
+    # This must be done before importing it
+    import mimetypes
+    mimetypes.init()
+
     from twisted.internet import reactor
     from twisted.web.resource import Resource, NoResource
     from twisted.web.server import Site
