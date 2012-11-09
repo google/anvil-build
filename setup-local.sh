@@ -31,4 +31,5 @@ virtualenv $DIR/local_virtualenv
 # Install there.
 source $DIR/local_virtualenv/bin/activate
 cd $DIR
-python setup.py develop
+echo "running setup.py develop, this may take a moment..."
+python setup.py --quiet develop
