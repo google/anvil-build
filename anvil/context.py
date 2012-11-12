@@ -252,7 +252,7 @@ class BuildContext(object):
         # Ignore if any dependency on any rule before it in the list
         skip_rule = False
         if i:
-          for old_rule in remaining_rules[:i - 1]:
+          for old_rule in remaining_rules[:i]:
             if self.rule_graph.has_dependency(next_rule.path, old_rule.path):
               # Blocked on previous rule
               skip_rule = True
