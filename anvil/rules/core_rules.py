@@ -254,6 +254,91 @@ class _ConcatFilesTask(Task):
     return True
 
 
+@build_rule('embed_files')
+class EmbedFilesRule(Rule):
+  """Wraps and escapes files for embedding.
+  Each file is wrapped with the given expression and written out. Optionally,
+  certain characters are escaped. All files are concatenated and given the name
+  of the rule unless out is specified.
+
+  Note that if referencing other rules or globs the order of files may be
+  undefined, so if order matters try to enumerate files manually.
+
+  Inputs:
+    srcs: Source file paths. The order is the order in which they will be
+        concatenated.
+    wrapper: Wrapper expression. The value %output% will be replaced with the
+        source file.
+    out: Optional output name. If none is provided than the rule name will be
+        used.
+    replace_chars: A list of replacements such as ['\n', '\\n'].
+
+  Outputs:
+    All of the srcs concatenated into a single file path. If no out is specified
+    a file with the name of the rule will be created.
+  """
+
+  def __init__(self, name, wrapper, out=None, replace_chars=None,
+      *args, **kwargs):
+    """Initializes a file embedding rule.
+
+    Args:
+      name: Rule name.
+      srcs: Source file paths. The order is the order in which they will be
+          concatenated.
+      wrapper: Wrapper expression. The value %output% will be replaced with the
+          source file.
+      out: Optional output name. If none is provided than the rule name will be
+          used.
+      replace_chars: A list of replacements such as ['\n', '\\n'].
+    """
+    super(EmbedFilesRule, self).__init__(name, *args, **kwargs)
+    self.out = out
+    self.wrapper = wrapper
+    self.replace_chars = replace_chars or []
+
+  class _Context(RuleContext):
+    def begin(self):
+      super(EmbedFilesRule._Context, self).begin()
+
+      output_path = self._get_out_path(name=self.rule.out)
+      self._ensure_output_exists(os.path.dirname(output_path))
+      self._append_output_paths([output_path])
+
+      # Skip if cache hit
+      if self._check_if_cached():
+        self._succeed()
+        return
+
+      # Async issue templating task
+      d = self._run_task_async(_EmbedFilesRuleTask(
+          self.build_env, self.src_paths, output_path, self.rule.wrapper,
+          self.rule.replace_chars))
+      self._chain(d)
+
+
+class _EmbedFilesRuleTask(Task):
+  def __init__(self, build_env, src_paths, output_path, wrapper, replace_chars,
+      *args, **kwargs):
+    super(_EmbedFilesRuleTask, self).__init__(build_env, *args, **kwargs)
+    self.src_paths = src_paths
+    self.output_path = output_path
+    self.wrapper = wrapper
+    self.replace_chars = replace_chars
+
+  def execute(self):
+    with io.open(self.output_path, 'wt') as out_file:
+      for src_path in self.src_paths:
+        with io.open(src_path, 'rt') as in_file:
+          raw_str = in_file.read()
+          replaced_str = raw_str
+          for pair in self.replace_chars:
+            replaced_str = replaced_str.replace(pair[0], pair[1])
+          wrapped_str = self.wrapper.replace('%output%', replaced_str)
+          out_file.write(wrapped_str)
+    return True
+
+
 @build_rule('shell_execute')
 class ShellExecuteRule(Rule):
   """Executes a command on the shell.
