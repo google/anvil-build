@@ -66,7 +66,6 @@ class LessCssLibraryRule(Rule):
       super(LessCssLibraryRule._Context, self).begin()
 
       args = [
-        '--strict-imports'
       ]
       args.extend(self.rule.compiler_flags)
 
