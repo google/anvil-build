@@ -268,7 +268,7 @@ class EmbedFilesRule(Rule):
     srcs: Source file paths. The order is the order in which they will be
         concatenated.
     wrapper: Wrapper expression. The value %output% will be replaced with the
-        source file.
+        source file. %path% will be the relative path to the file.
     out: Optional output name. If none is provided than the rule name will be
         used.
     replace_chars: A list of replacements such as ['\n', '\\n'].
@@ -312,15 +312,17 @@ class EmbedFilesRule(Rule):
 
       # Async issue templating task
       d = self._run_task_async(_EmbedFilesRuleTask(
-          self.build_env, self.src_paths, output_path, self.rule.wrapper,
-          self.rule.replace_chars))
+          self.build_env, self.rule.parent_module.path,
+          self.src_paths, output_path,
+          self.rule.wrapper, self.rule.replace_chars))
       self._chain(d)
 
 
 class _EmbedFilesRuleTask(Task):
-  def __init__(self, build_env, src_paths, output_path, wrapper, replace_chars,
-      *args, **kwargs):
+  def __init__(self, build_env, rule_path, src_paths, output_path, wrapper,
+      replace_chars, *args, **kwargs):
     super(_EmbedFilesRuleTask, self).__init__(build_env, *args, **kwargs)
+    self.rule_path = rule_path
     self.src_paths = src_paths
     self.output_path = output_path
     self.wrapper = wrapper
@@ -331,10 +333,18 @@ class _EmbedFilesRuleTask(Task):
       for src_path in self.src_paths:
         with io.open(src_path, 'rt') as in_file:
           raw_str = in_file.read()
+
           replaced_str = raw_str
           for pair in self.replace_chars:
             replaced_str = replaced_str.replace(pair[0], pair[1])
+
           wrapped_str = self.wrapper.replace('%output%', replaced_str)
+
+          rel_path = os.path.relpath(src_path, self.rule_path)
+          rel_path = anvil.util.strip_build_paths(rel_path)
+          rel_path = os.path.normpath(rel_path)
+          wrapped_str = wrapped_str.replace('%path%', rel_path)
+
           out_file.write(wrapped_str)
     return True
 
