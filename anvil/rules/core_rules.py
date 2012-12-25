@@ -340,7 +340,7 @@ class _EmbedFilesRuleTask(Task):
 
           wrapped_str = self.wrapper.replace('%output%', replaced_str)
 
-          rel_path = os.path.relpath(src_path, self.rule_path)
+          rel_path = os.path.relpath(src_path, os.path.dirname(self.rule_path))
           rel_path = anvil.util.strip_build_paths(rel_path)
           rel_path = os.path.normpath(rel_path)
           wrapped_str = wrapped_str.replace('%path%', rel_path)
