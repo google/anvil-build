@@ -8,6 +8,7 @@ __author__ = 'benvanik@google.com (Ben Vanik)'
 
 import os
 import shutil
+import sys
 
 from anvil.cache import RuleCache, FileRuleCache
 from anvil.context import BuildEnvironment, BuildContext
@@ -63,8 +64,13 @@ def run_build(cwd, parsed_args):
   project = Project(module_resolver=module_resolver)
 
   # -j/--jobs switch to change execution mode
-  # TODO(benvanik): re-enable when multiprocessing works
   #task_executor = None
+  if parsed_args.jobs is None:
+    # Default to -j1 on Windows only.
+    # TODO(benvanik): figure out why this fails so catastrophically
+    if (sys.platform == 'cygwin' or
+        sys.platform == 'win32'):
+      parsed_args.jobs = 1
   if parsed_args.jobs == 1:
     task_executor = InProcessTaskExecutor()
   else:
