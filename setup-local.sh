@@ -15,7 +15,13 @@ DIR="$( cd "$( dirname "$0" )" && pwd )"
 if [ ! -e "$(which virtualenv)" ]; then
   echo "virtualenv not found - installing..."
   if [ -e "$(which pip)" ]; then
-    sudo pip install virtualenv
+    # Always install 1.8.2 on Windows - 1.8.4 is broken.
+    # See: https://github.com/pypa/virtualenv/issues/373
+    if [ -e "/Cygwin.bat" ]; then
+      pip install virtualenv==1.8.2
+    else
+      sudo pip install virtualenv
+    fi
   elif [-e "$(which easyinstall)" ]; then
     sudo easy_install virtualenv
   else
