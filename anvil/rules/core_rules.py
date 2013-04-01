@@ -6,6 +6,7 @@
 __author__ = 'benvanik@google.com (Ben Vanik)'
 
 
+import base64
 import io
 import os
 import re
@@ -269,6 +270,7 @@ class EmbedFilesRule(Rule):
         concatenated.
     wrapper: Wrapper expression. The value %output% will be replaced with the
         source file. %path% will be the relative path to the file.
+    encoding: Encoding type. Either utf8 or base64.
     out: Optional output name. If none is provided than the rule name will be
         used.
     replace_chars: A list of replacements such as ['\n', '\\n'].
@@ -278,7 +280,7 @@ class EmbedFilesRule(Rule):
     a file with the name of the rule will be created.
   """
 
-  def __init__(self, name, wrapper, out=None, replace_chars=None,
+  def __init__(self, name, wrapper, encoding=None, out=None, replace_chars=None,
       *args, **kwargs):
     """Initializes a file embedding rule.
 
@@ -288,6 +290,7 @@ class EmbedFilesRule(Rule):
           concatenated.
       wrapper: Wrapper expression. The value %output% will be replaced with the
           source file.
+      encoding: Encoding type. Either utf8 or base64.
       out: Optional output name. If none is provided than the rule name will be
           used.
       replace_chars: A list of replacements such as ['\n', '\\n'].
@@ -295,6 +298,7 @@ class EmbedFilesRule(Rule):
     super(EmbedFilesRule, self).__init__(name, *args, **kwargs)
     self.out = out
     self.wrapper = wrapper
+    self.encoding = encoding or 'utf8'
     self.replace_chars = replace_chars or []
 
   class _Context(RuleContext):
@@ -314,18 +318,19 @@ class EmbedFilesRule(Rule):
       d = self._run_task_async(_EmbedFilesRuleTask(
           self.build_env, self.rule.parent_module.path,
           self.src_paths, output_path,
-          self.rule.wrapper, self.rule.replace_chars))
+          self.rule.wrapper, self.rule.encoding, self.rule.replace_chars))
       self._chain(d)
 
 
 class _EmbedFilesRuleTask(Task):
   def __init__(self, build_env, rule_path, src_paths, output_path, wrapper,
-      replace_chars, *args, **kwargs):
+      encoding, replace_chars, *args, **kwargs):
     super(_EmbedFilesRuleTask, self).__init__(build_env, *args, **kwargs)
     self.rule_path = rule_path
     self.src_paths = src_paths
     self.output_path = output_path
     self.wrapper = wrapper
+    self.encoding = encoding
     self.replace_chars = replace_chars
 
   def execute(self):
@@ -334,7 +339,11 @@ class _EmbedFilesRuleTask(Task):
         with io.open(src_path, 'rt') as in_file:
           raw_str = in_file.read()
 
-          replaced_str = raw_str
+          encoded_str = raw_str
+          if self.encoding == 'base64':
+            encoded_str = unicode(base64.b64encode(encoded_str))
+
+          replaced_str = encoded_str
           for pair in self.replace_chars:
             replaced_str = replaced_str.replace(pair[0], pair[1])
 
