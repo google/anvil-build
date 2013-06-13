@@ -372,8 +372,9 @@ class JsDependencyFile(object):
 
   _PROVIDEREQURE_REGEX = re.compile(
       'goog\.(provide|require)\(\s*[\'"](.+)[\'"]\s*\)')
+  # TODO(benvanik): a real comment search for @provideGoog.
   _GOOG_BASE_LINE = (
-      'var goog = goog || {}; // Identifies this file as the Closure base.\n')
+      ' * @provideGoog\n')
 
   def __init__(self, src_path):
     """Initializes a JS dependency file.
