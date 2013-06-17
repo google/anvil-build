@@ -88,11 +88,11 @@ class ClosureGssLibraryRule(Rule):
       elif self.rule.mode == 'DEBUG_COMPILED':
         needs_map_file = True
         args.extend(['--rename', 'DEBUG'])
-        args.extend(['--output-renaming-map-format', 'CLOSURE_COMPILED'])
+        args.extend(['--output-renaming-map-format', 'CLOSURE_COMPILED_SPLIT_HYPHENS'])
       elif self.rule.mode == 'COMPILED':
         needs_map_file = True
         args.extend(['--rename', 'CLOSURE'])
-        args.extend(['--output-renaming-map-format', 'CLOSURE_COMPILED'])
+        args.extend(['--output-renaming-map-format', 'CLOSURE_COMPILED_SPLIT_HYPHENS'])
 
       if needs_map_file:
         map_path = self._get_gen_path(name=self.rule.out, suffix='.js')
