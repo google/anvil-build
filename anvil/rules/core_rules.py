@@ -336,12 +336,14 @@ class _EmbedFilesRuleTask(Task):
   def execute(self):
     with io.open(self.output_path, 'wt') as out_file:
       for src_path in self.src_paths:
-        with io.open(src_path, 'rt') as in_file:
+        with io.open(src_path, 'rb') as in_file:
           raw_str = in_file.read()
 
           encoded_str = raw_str
           if self.encoding == 'base64':
             encoded_str = unicode(base64.b64encode(encoded_str))
+          else:
+            encoded_str = unicode(raw_str)
 
           replaced_str = encoded_str
           for pair in self.replace_chars:
