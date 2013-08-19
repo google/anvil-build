@@ -63,7 +63,7 @@ class ServeCommand(ManageCommand):
     # Initial build
     if len(args.targets):
       (result, all_target_outputs) = commandutil.run_build(cwd, args)
-      print all_target_outputs
+      print(all_target_outputs)
 
     self._launch_http_server(args.http_port, cwd)
 
@@ -107,7 +107,7 @@ class ServeCommand(ManageCommand):
         # Fallback to normal handling
         return Site.getResourceFor(self, request)
 
-    print 'Launching HTTP server on port %s...' % (port)
+    print('Launching HTTP server on port %s...' % (port))
 
     root = File(root_path)
     factory = MergedSite(root)

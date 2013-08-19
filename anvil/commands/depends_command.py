@@ -68,19 +68,19 @@ class DependsCommand(ManageCommand):
     dependencies = dep_manager.scan_dependencies(args.targets)
 
     if not len(dependencies):
-      print 'No requirements found'
+      print('No requirements found')
       return True
 
     if not args.install:
       # TODO(benvanik): prettier output
       for dependency in dependencies:
-        print dependency
+        print(dependency)
       return True
 
     # TODO(benvanik): check if running as root
     running_as_root = False
     if args.install and not running_as_root:
-      print 'Not running as root - run again with sudo'
+      print('Not running as root - run again with sudo')
       return False
 
     result = dep_manager.install_all(dependencies)

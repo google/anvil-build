@@ -131,7 +131,8 @@ class Project(object):
     """
     if not anvil.util.is_rule_path(rule_path):
       raise NameError('The rule path "%s" is missing a semicolon' % (rule_path))
-    (module_path, rule_name) = string.rsplit(rule_path, ':', 1)
+    (module_path, rule_name) = rule_path.split(':')
+    print(rule_name)
     if self.module_resolver.can_resolve_local:
       if not len(module_path) and not requesting_module:
         module_path = '.'

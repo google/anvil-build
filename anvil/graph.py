@@ -68,7 +68,7 @@ class RuleGraph(object):
       if not rule:
         raise KeyError('Rule "%s" unable to be resolved' % (rule_path))
       rules.append(rule)
-
+      print(rule)
       # If already present, ignore (no need to recurse)
       if rule.path in self.rule_nodes:
         continue

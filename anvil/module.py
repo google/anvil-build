@@ -84,9 +84,10 @@ class Module(object):
     Raises:
       NameError: The given rule name was invalid.
     """
-    if len(rule_name) and rule_name[0] == ':':
-      rule_name = rule_name[1:]
-    if not len(rule_name):
+    print(rule_name)
+    if rule_name or rule_name[0] == ':':
+      rule_name = rule_name
+    if not rule_name:
       raise NameError('Rule name "%s" is invalid' % (rule_name))
     return self.rules.get(rule_name, None)
 
@@ -184,7 +185,8 @@ class ModuleLoader(object):
       self._add_builtins(scope)
 
       # Execute!
-      exec self.code_obj in scope
+      if self.code_obj in scope:
+        exec(self.code_obj)
     finally:
       self._current_scope = None
       all_rules = anvil.rule.end_capturing_emitted_rules()

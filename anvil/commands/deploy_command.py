@@ -83,8 +83,8 @@ class DeployCommand(ManageCommand):
     all_target_outputs.sort()
 
     # Copy results
-    print ''
-    print 'Copying results to %s:' % (args.output)
+    print('')
+    print('Copying results to %s:' % (args.output))
     for target_output in all_target_outputs:
       # Get path relative to root
       # This will contain the build-out/ etc
@@ -106,7 +106,7 @@ class DeployCommand(ManageCommand):
         os.makedirs(deploy_dir)
 
       # Copy!
-      print '%s -> %s' % (rel_path, deploy_path)
+      print('%s -> %s' % (rel_path, deploy_path))
       shutil.copy(target_output, deploy_path)
 
     return 0 if result else 1

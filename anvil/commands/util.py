@@ -38,7 +38,7 @@ def clean_output(cwd):
       try:
         shutil.rmtree(full_path)
       except Exception as e:
-        print 'Unable to remove %s: %s' % (full_path, e)
+        print('Unable to remove %s: %s' % (full_path, e))
         any_failed = True
   return not any_failed
 
@@ -78,7 +78,7 @@ def run_build(cwd, parsed_args):
 
   # TODO(benvanik): good logging/info - resolve rules in project and print
   #     info?
-  print 'building %s' % (parsed_args.targets)
+  print('building %s' % (parsed_args.targets))
 
   # Setup cache
   if not parsed_args.force:

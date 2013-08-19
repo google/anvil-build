@@ -106,12 +106,12 @@ class MakoTemplateTask(Task):
     try:
       template = Template(template_contents)
     except Exception as e:
-      print 'Error in template file %s:\n%s' % (self.template_path, e)
+      print('Error in template file %s:\n%s' % (self.template_path, e))
       return False
     try:
       result = template.render_unicode(**self.template_args)
     except Exception as e:
-      print 'Error applying template %s:\n%s' % (self.template_path, e)
+      print('Error applying template %s:\n%s' % (self.template_path, e))
       return False
     with io.open(self.path, 'wt') as f:
       f.write(result)
@@ -167,7 +167,7 @@ class ExecutableTask(Task):
                            stderr=subprocess.PIPE,
                            env=env)
     except:
-      print 'unable to open process'
+      print('unable to open process')
       raise ExecutableError()
 
     # TODO(benvanik): would be nice to support a few modes here - enabling
@@ -176,11 +176,11 @@ class ExecutableTask(Task):
     (stdoutdata, stderrdata) = p.communicate()
 
     if len(stdoutdata) or len(stderrdata):
-      print '\n%s:' % (self.pretty_name)
+      print('\n%s:' % (self.pretty_name))
       if len(stdoutdata):
-        print stdoutdata
+        print(stdoutdata)
       if len(stderrdata):
-        print stderrdata
+        print(stderrdata)
 
     return_code = p.returncode
     if return_code != 0:
@@ -347,7 +347,7 @@ class InProcessTaskExecutor(TaskExecutor):
       result = task.execute()
       deferred.callback(result)
     except Exception as e:
-      print 'exception in task:'
+      print('exception in task:')
       traceback.print_exc(e)
       deferred.errback(exception=e)
     return deferred
@@ -383,12 +383,12 @@ class MultiProcessTaskExecutor(TaskExecutor):
       self._pool = multiprocessing.Pool(processes=self.worker_count,
                                         initializer=_task_initializer)
     except OSError as e: # pragma: no cover
-      print e
-      print 'Unable to initialize multiprocessing!'
+      print(e)
+      print('Unable to initialize multiprocessing!')
       if sys.platform == 'cygwin':
-        print ('Cygwin has known issues with multiprocessing and there\'s no '
-               'workaround. Boo!')
-      print 'Try running with -j1 to disable multiprocessing'
+        print(('Cygwin has known issues with multiprocessing and there\'s no '
+               'workaround. Boo!'))
+      print('Try running with -j1 to disable multiprocessing')
       raise
 
   def run_task_async(self, task):

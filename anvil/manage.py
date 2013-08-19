@@ -144,7 +144,7 @@ def discover_commands(search_paths):
                 issubclass(command_cls, ManageCommand)):
               command = command_cls()
               command_name = command.name
-              if commands.has_key(command_name):
+              if command_name in commands:
                 raise KeyError('Command "%s" already defined' % (command_name))
               commands[command_name] = command
   return commands
@@ -296,14 +296,14 @@ def main(): # pragma: no cover
         cwd=os.getcwd(),
         commands=commands)
     if match_str and len(match_str):
-      print match_str
+      print(match_str)
     sys.exit(1)
 
   try:
     if len(sys.argv) < 2:
       raise ValueError('No command given')
     command_name = sys.argv[1]
-    if not commands.has_key(command_name):
+    if not command_name in commands:
       raise ValueError('Command "%s" not found' % (command_name))
 
     command = commands[command_name]
@@ -311,7 +311,7 @@ def main(): # pragma: no cover
                               args=sys.argv[2:],
                               cwd=os.getcwd())
   except ValueError:
-    print usage(commands)
+    print(usage(commands))
     return_code = 1
   except Exception as e:
     #print e

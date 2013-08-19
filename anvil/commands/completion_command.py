@@ -72,14 +72,14 @@ complete -o default -F _anvil_completion anvil
     try:
       with io.open('/etc/bash_completion.d/anvil', 'wb') as f:
         f.write(file_str)
-      print 'Successfully installed to /etc/bash_completion.d/'
-      print 'Restart your shell or run the following to start completing:'
-      print '$ source /etc/bash_completion.d/anvil'
+      print('Successfully installed to /etc/bash_completion.d/')
+      print('Restart your shell or run the following to start completing:')
+      print('$ source /etc/bash_completion.d/anvil')
       return True
     except IOError as e:
-      print e
-      print 'error: unable to write to /etc/bash_completion.d/'
-      print '       try running with sudo!'
+      print(e)
+      print('error: unable to write to /etc/bash_completion.d/')
+      print('       try running with sudo!')
       return False
 
 
@@ -121,12 +121,12 @@ class CompletionCommand(ManageCommand):
   def execute(self, args, cwd):
     if not args.shell:
       self.create_argument_parser().print_help()
-      print '\nerror: please specify a shell (such as --bash)'
+      print('\nerror: please specify a shell (such as --bash)')
       return 1
 
     if not _COMPLETIONS.has_key(args.shell):
       self.create_argument_parser().print_help()
-      print '\nerror: shell environment "%s" not supported' % (args.shell)
+      print('\nerror: shell environment "%s" not supported' % (args.shell))
       return 1
 
     completion = _COMPLETIONS[args.shell]
@@ -136,6 +136,6 @@ class CompletionCommand(ManageCommand):
       else:
         return 1
     else:
-      print completion.get_profile_string()
+      print(completion.get_profile_string())
 
     return 0

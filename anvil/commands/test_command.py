@@ -37,6 +37,6 @@ class TestCommand(ManageCommand):
   def execute(self, args, cwd):
     (result, all_target_outputs) = commandutil.run_build(cwd, args)
 
-    print all_target_outputs
+    print(all_target_outputs)
 
     return 0 if result else 1

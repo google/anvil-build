@@ -210,7 +210,7 @@ class BuildContext(object):
         in_flight_rules.remove(rule)
         # TODO(benvanik): log result/exception/etc?
         if exception: # pragma: no cover
-          print exception
+          print(exception)
         any_failed[0] = True
         _pump(previous_succeeded=False)
 
@@ -680,7 +680,7 @@ class RuleContext(object):
     rel_path = os.path.relpath(self.rule.path, self.build_env.root_path)
     rel_path = util.strip_implicit_build_name(rel_path)
 
-    print '... %20s ~ %s' % (self.rule.rule_name, rel_path)
+    print('... %20s ~ %s' % (self.rule.rule_name, rel_path))
 
     # Compute file delta
     # Note that this could be done async (somehow)
@@ -744,7 +744,7 @@ class RuleContext(object):
     self.end_time = util.timer()
     self.exception = exception
     # TODO(benvanik): real logging of rule failure
-    print '!! failed %s' % (self.rule)
+    print('!! failed %s' % (self.rule))
     if exception:
       self.deferred.errback(exception=exception)
     else:

@@ -111,12 +111,12 @@ def is_rule_path(value):
   """
   if not isinstance(value, str) or not len(value):
     return False
-  semicolon = string.rfind(value, ':')
+  semicolon = value.rfind(':')
   if semicolon < 0:
     return False
   # Must be just a valid literal after, no path separators
-  if (string.find(value, '\\', semicolon) >= 0 or
-      string.find(value, '/', semicolon) >= 0):
+  if (value.find('\\', semicolon) >= 0 or
+      value.find('/', semicolon) >= 0):
     return False
   return True
 

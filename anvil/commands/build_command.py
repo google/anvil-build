@@ -50,7 +50,7 @@ class BuildCommand(ManageCommand):
 
     (result, all_target_outputs) = commandutil.run_build(cwd, args)
 
-    print 'result %s, %s outputs' % (result, len(all_target_outputs))
+    print('result %s, %s outputs' % (result, len(all_target_outputs)))
     #print all_target_outputs
 
     return 0 if result else 1

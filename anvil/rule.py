@@ -227,7 +227,7 @@ class RuleNamespace(object):
       rule_type: Rule type.
     """
     rule_name = rule_type.rule_name
-    if self.rule_types.has_key(rule_name):
+    if rule_name in self.rule_types:
       raise KeyError('Rule type "%s" already defined' % (rule_name))
     self.rule_types[rule_name] = rule_type
 

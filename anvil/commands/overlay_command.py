@@ -87,8 +87,8 @@ class OverlayCommand(ManageCommand):
     checked_dirs = {}
 
     # Copy results
-    print ''
-    print 'Symlinking results to %s:' % (args.output)
+    print('')
+    print('Symlinking results to %s:' % (args.output))
     skipped_links = 0
     for target_output in all_target_outputs:
       # Get path relative to root
@@ -114,12 +114,12 @@ class OverlayCommand(ManageCommand):
 
       # Link!
       if not os.path.exists(deploy_path):
-        print '%s -> %s' % (rel_path, deploy_path)
+        print('%s -> %s' % (rel_path, deploy_path))
         os.symlink(target_output, deploy_path)
       else:
         skipped_links += 1
 
     if skipped_links:
-      print '(%s skipped)' % (skipped_links)
+      print('(%s skipped)' % (skipped_links))
 
     return 0 if result else 1
