@@ -1,7 +1,7 @@
 Anvil - a modern build system
 -----------------------------
 
-[![Build Status](https://secure.travis-ci.org/benvanik/anvil-build.png)](http://travis-ci.org/benvanik/anvil-build)
+[![Build Status](https://secure.travis-ci.org/google/anvil-build.png)](http://travis-ci.org/google/anvil-build)
 
 Anvil is a build system designed to ease the construction of content pipelines, taking many concepts and the rule file syntax that powers Google's internal build system and making them accessible in a small, open-source Python library. It features a rich and extensible build file format and many built-in rules to get started.
 
