@@ -374,7 +374,7 @@ class JsDependencyFile(object):
       'goog\.(provide|require)\(\s*[\'"](.+)[\'"]\s*\)')
   # TODO(benvanik): a real comment search for @provideGoog.
   _GOOG_BASE_LINE = (
-      ' * @provideGoog\n')
+      ' * @provideGoog')
 
   def __init__(self, src_path):
     """Initializes a JS dependency file.
@@ -406,7 +406,7 @@ class JsDependencyFile(object):
           provides.add(str(match.group(2)))
         else:
           requires.add(str(match.group(2)))
-      elif line == self._GOOG_BASE_LINE:
+      elif line.startswith(self._GOOG_BASE_LINE):
         provides.add('goog')
         self.is_base_js = True
       elif line.startswith('goog.setCssNameMapping('):
