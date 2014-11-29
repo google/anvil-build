@@ -116,6 +116,8 @@ class BuildContext(object):
     self.stop_on_error = stop_on_error
     self.raise_on_error = raise_on_error
 
+    self.error_encountered = False
+
     # Build the rule graph
     self.rule_graph = graph.RuleGraph(self.project)
 
@@ -154,9 +156,9 @@ class BuildContext(object):
     d = self.execute_async(target_rule_names)
     self.wait(d)
     result = [None]
-    def _callback():
+    def _callback(*args, **kwargs):
       result[0] = True
-    def _errback():
+    def _errback(*args, **kwargs):  
       result[0] = False
     d.add_callback_fn(_callback)
     d.add_errback_fn(_errback)
@@ -188,126 +190,88 @@ class BuildContext(object):
 
     # Calculate the sequence of rules to execute
     rule_sequence = self.rule_graph.calculate_rule_sequence(target_rule_names)
-
-    any_failed = [False]
-    main_deferred = Deferred()
     remaining_rules = rule_sequence[:]
-    in_flight_rules = []
-    pumping = [False]
 
-    def _issue_rule(rule):
+    def _issue_rule(rule, deferred=None):
       """Issues a single rule into the current execution context.
       Updates the in_flight_rules list and pumps when the rule completes.
 
       Args:
         rule: Rule to issue.
+        deferred: Deferred to wait on before executing the rule.
       """
       def _rule_callback(*args, **kwargs):
-        in_flight_rules.remove(rule)
-        _pump(previous_succeeded=True)
+        remaining_rules.remove(rule)
 
       def _rule_errback(exception=None, *args, **kwargs):
-        in_flight_rules.remove(rule)
+        remaining_rules.remove(rule)
+        if self.stop_on_error:
+          self.error_encountered = True
         # TODO(benvanik): log result/exception/etc?
         if exception: # pragma: no cover
           print exception
-        any_failed[0] = True
-        _pump(previous_succeeded=False)
 
-      in_flight_rules.append(rule)
-      rule_deferred = self._execute_rule(rule)
+      # All RuleContexts should be created by the time this method is called.
+      assert self.rule_contexts[rule.path]
+      rule_deferred = self.rule_contexts[rule.path].deferred
       rule_deferred.add_callback_fn(_rule_callback)
       rule_deferred.add_errback_fn(_rule_errback)
+
+      def _execute(*args, **kwargs):
+        self._execute_rule(rule)
+      def _on_failure(*args, **kwards):
+        self._execute_rule(rule)
+
+      if deferred:
+        deferred.add_callback_fn(_execute)
+        deferred.add_errback_fn(_on_failure)
+      else:
+        _execute()
+
       return rule_deferred
 
-    def _pump(previous_succeeded=True):
-      """Attempts to run another rule and signals the main_deferred if done.
+    def _chain_rule_execution(target_rules):
+      """Given a list of target rules, build them and all dependencies.
+
+      This method builds the passed in target rules and all dependencies. It
+      first assembles a list of the dependencies to target rules orded as:
+          [dependencies -> target_rules]
+      It then traverses the list, issuing execute commands for all rules that
+      do not have dependencies within the list. For all rules that do have
+      dependencies within the list, a deferred is used to trigger the rule's
+      exeution once all dependencies have completed executing.
 
       Args:
-        previous_succeeded: Whether the previous rule succeeded.
+        target_rules: A list of rules to be executed.
+
+      Returns:
+        A deferred that resolves once all target_rules have either executed
+        successfully or failed.
       """
-      # If we're already done, gracefully exit
-      if main_deferred.is_done():
-        return
+      issued_rules = []
+      all_deferreds = []
+      for rule in target_rules:
+        # Create the RuleContexts here so that failures can cascade and the
+        # deferred is accessible by any rules that depend on this one.
+        rule_ctx = rule.create_context(self)
+        self.rule_contexts[rule.path] = rule_ctx
 
-      # If we failed and we are supposed to stop, gracefully stop by
-      # killing all future rules
-      # This is better than terminating immediately, as it allows legit tasks
-      # to finish
-      if any_failed[0] and self.stop_on_error:
-        remaining_rules[:] = []
-        # TODO(benvanik): better error message
-        main_deferred.errback()
-        return
-
-      if pumping[0]:
-        return
-      pumping[0] = True
-
-      # Scan through all remaining rules - if any are unblocked, issue them
-      to_issue = []
-      for i in range(0, len(remaining_rules)):
-        next_rule = remaining_rules[i]
-
-        # Ignore if any dependency on any rule before it in the list
-        skip_rule = False
-        if i:
-          for old_rule in remaining_rules[:i]:
-            if self.rule_graph.has_dependency(next_rule.path, old_rule.path):
-              # Blocked on previous rule
-              skip_rule = True
-              break
-          if skip_rule:
-            continue
-
-        # Ignore if any dependency on an in-flight rule
-        for in_flight_rule in in_flight_rules:
-          if self.rule_graph.has_dependency(next_rule.path,
-                                            in_flight_rule.path):
-            # Blocked on a previous rule, so pass and wait for the next pump
-            skip_rule = True
-            break
-        if skip_rule:
-          continue
-
-        # If here then we found no conflicting rules, queue for running
-        to_issue.append(next_rule)
-
-      # Run all rules that we can
-      for rule in to_issue:
-        remaining_rules.remove(rule)
-      for rule in to_issue:
-        _issue_rule(rule)
-
-      if (not len(remaining_rules) and
-          not len(in_flight_rules) and
-          not main_deferred.is_done()):
-        assert not len(remaining_rules)
-
-        # Done!
-        # TODO(benvanik): better errbacks? some kind of BuildResults?
-        if not any_failed[0]:
-          # Only save the cache when we have succeeded
-          # This causes some stuff to be rebuilt in failure cases, but prevents
-          # a lot of weirdness when things are partially broken
-          self.cache.save()
-
-          main_deferred.callback()
+        # Make the execution of the current rule dependent on the execution
+        # of all rules it depends on.
+        dependent_deferreds = []
+        for executable_rule in issued_rules:
+          if self.rule_graph.has_dependency(rule.path, executable_rule.path):
+            executable_ctx = self.rule_contexts[executable_rule.path]
+            dependent_deferreds.append(executable_ctx.deferred)
+        if dependent_deferreds:
+          dependent_deferred = async.gather_deferreds(
+            dependent_deferreds, errback_if_any_fail=True)
+          all_deferreds.append(_issue_rule(rule, dependent_deferred))
         else:
-          main_deferred.errback()
+          all_deferreds.append(_issue_rule(rule))
+      return async.gather_deferreds(all_deferreds, errback_if_any_fail=True)
 
-      pumping[0] = False
-
-      # Keep the queue pumping
-      if not len(in_flight_rules) and len(remaining_rules):
-        _pump()
-
-    # Kick off execution (once for each rule as a heuristic for filling the
-    # pipeline)
-    for rule in rule_sequence:
-      _pump()
-
-    return main_deferred
+    return _chain_rule_execution(rule_sequence)
 
   def wait(self, deferreds):
     """Blocks waiting on a list of deferreds until they all complete.
@@ -330,10 +294,10 @@ class BuildContext(object):
     Returns:
       A Deferred that will callback when the rule has completed executing.
     """
-    assert not self.rule_contexts.has_key(rule.path)
-    rule_ctx = rule.create_context(self)
-    self.rule_contexts[rule.path] = rule_ctx
-    if rule_ctx.check_predecessor_failures():
+    assert self.rule_contexts.has_key(rule.path)
+    rule_ctx = self.rule_contexts[rule.path]
+    if (rule_ctx.check_predecessor_failures() or
+        self.stop_on_error and self.error_encountered):
       return rule_ctx.cascade_failure()
     else:
       rule_ctx.begin()
@@ -647,7 +611,7 @@ class RuleContext(object):
     """Checks all dependencies for failure.
 
     Returns:
-      True if any dependency has failed.
+      True if any dependency has failed or been interrupted.
     """
     for dep in self.rule.get_dependent_paths():
       if util.is_rule_path(dep):
@@ -655,7 +619,7 @@ class RuleContext(object):
             dep, requesting_module=self.rule.parent_module)
         other_rule_ctx = self.build_context.rule_contexts.get(
             other_rule.path, None)
-        if other_rule_ctx.status == Status.FAILED:
+        if (other_rule_ctx.status == Status.FAILED):
           return True
     return False
 
