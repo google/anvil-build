@@ -214,12 +214,19 @@ class BuildContextTest(FixtureTestCase):
       d = ctx.execute_sync(['m:a'])
       self.assertFalse(rule_was_cached[0])
 
+    # If -f was passed, cached should return false.
+    with BuildContext(self.build_env, project, rule_cache=rule_cache, 
+                      force=True) as ctx:
+      file_delta = cache.FileDelta()
+      file_delta.removed_files = ['b']
+      d = ctx.execute_sync(['m:a'])
+      self.assertFalse(rule_was_cached[0])
+
     # If there are no source or output files, then the cache check should be
     # short-circuited and the cache check should return false.
     project = Project(modules=[Module('m', rules=[
         NoSourceNoOutRule('a')])])
-    with BuildContext(self.build_env, project, rule_cache=rule_cache,
-                      force=True) as ctx:
+    with BuildContext(self.build_env, project, rule_cache=rule_cache) as ctx:
       file_delta = cache.FileDelta()
       file_delta.removed_files = ['b']
       d = ctx.execute_sync(['m:a'])

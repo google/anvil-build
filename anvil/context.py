@@ -695,6 +695,10 @@ class RuleContext(object):
     Returns:
       True if no inputs or outputs have changed.
     """
+    # If -f (force) was passed to the BuildContext, return False.
+    if self.build_context.force:
+      return False
+
     # If the rule does not have any source or output files, then nothing can
     # be cached. Return False.
     if not self.src_paths and not self.all_output_files:
