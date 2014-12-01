@@ -695,6 +695,11 @@ class RuleContext(object):
     Returns:
       True if no inputs or outputs have changed.
     """
+    # If the rule does not have any source or output files, then nothing can
+    # be cached. Return False.
+    if not self.src_paths and not self.all_output_files:
+      return False
+
     # If any input changed...
     if self.file_delta.any_changes():
       return False
