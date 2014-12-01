@@ -151,7 +151,8 @@ class ExecutableTask(Task):
       call_args: Arguments to pass to the executable.
       env: Additional environment variables.
     """
-    super(ExecutableTask, self).__init__(build_env, *args, **kwargs)
+    super(ExecutableTask, self).__init__(
+      build_env, executable_name, *args, **kwargs)
     self.executable_name = executable_name
     self.call_args = call_args[:] if call_args else []
     self.env = env.copy() if env else {}

@@ -12,6 +12,7 @@ import os
 import unittest2
 
 from anvil import async
+from anvil import cache
 from anvil.context import *
 from anvil.module import *
 from anvil.rule import *
@@ -168,8 +169,68 @@ class BuildContextTest(FixtureTestCase):
     # TODO(benvanik): test raise_on_error
 
   def testCaching(self):
-    # TODO(benvanik): test caching and force arg
-    pass
+    rule_was_cached = [False]
+    class OutputRule(Rule):
+      class _Context(RuleContext):
+        def begin(self):
+          super(OutputRule._Context, self).begin()
+          # Make sure an output path is defined so that caching is meaningful.
+          self._append_output_paths(['./output'])
+          rule_was_cached[0] = self._check_if_cached()
+          self._succeed()
+
+    class NoSourceNoOutRule(Rule):
+      class _Context(RuleContext):
+        def begin(self):
+          super(NoSourceNoOutRule._Context, self).begin()
+          rule_was_cached[0] = self._check_if_cached()
+          self._succeed()
+
+    file_delta = cache.FileDelta()
+    class TestCache(cache.RuleCache):
+      def compute_delta(self, rule_path, mode, src_paths):
+        return file_delta
+    rule_cache = TestCache()
+
+    project = Project(modules=[Module('m', rules=[
+        OutputRule('a')])])
+    # With no changed_files in the FileDelta, cached should return true.
+    with BuildContext(self.build_env, project, rule_cache=rule_cache) as ctx:
+      file_delta = cache.FileDelta()
+      d = ctx.execute_sync(['m:a'])
+      self.assertTrue(rule_was_cached[0])
+
+    # With a changed_files entry in the FileDelta, cached should return false.
+    with BuildContext(self.build_env, project, rule_cache=rule_cache) as ctx:
+      file_delta = cache.FileDelta()
+      file_delta.changed_files = ['b']
+      d = ctx.execute_sync(['m:a'])
+      self.assertFalse(rule_was_cached[0])
+
+    # If any output files were removed, cached should return false.
+    with BuildContext(self.build_env, project, rule_cache=rule_cache) as ctx:
+      file_delta = cache.FileDelta()
+      file_delta.removed_files = ['b']
+      d = ctx.execute_sync(['m:a'])
+      self.assertFalse(rule_was_cached[0])
+
+    # If -f was passed, cached should return false.
+    with BuildContext(self.build_env, project, rule_cache=rule_cache, 
+                      force=True) as ctx:
+      file_delta = cache.FileDelta()
+      file_delta.removed_files = ['b']
+      d = ctx.execute_sync(['m:a'])
+      self.assertFalse(rule_was_cached[0])
+
+    # If there are no source or output files, then the cache check should be
+    # short-circuited and the cache check should return false.
+    project = Project(modules=[Module('m', rules=[
+        NoSourceNoOutRule('a')])])
+    with BuildContext(self.build_env, project, rule_cache=rule_cache) as ctx:
+      file_delta = cache.FileDelta()
+      file_delta.removed_files = ['b']
+      d = ctx.execute_sync(['m:a'])
+      self.assertFalse(rule_was_cached[0])
 
   def testBuild(self):
     project = Project(module_resolver=FileModuleResolver(self.root_path))
