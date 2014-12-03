@@ -12,6 +12,7 @@ import os
 import unittest2
 
 from anvil import async
+from anvil import cache
 from anvil.context import *
 from anvil.module import *
 from anvil.rule import *
@@ -152,24 +153,96 @@ class BuildContextTest(FixtureTestCase):
       results = ctx.get_rule_results('m:b')
       self.assertEqual(results[0], Status.FAILED)
 
+    print '*******************************************************'
     project = Project(modules=[Module('m', rules=[
         FailRule('a'),
-        SucceedRule('b', deps=[':a'])])])
+        SucceedRule('b', deps=[':a']),
+        SucceedRule('c'),
+        SucceedRule('d', deps=[':c']),
+        SucceedRule('e', deps=[':c']),
+        SucceedRule('f', deps=[':d', ':e'])])])
     with BuildContext(self.build_env, project, stop_on_error=True) as ctx:
-      d = ctx.execute_async(['m:b'])
+      d = ctx.execute_async(['m:b', 'm:f'])
       ctx.wait(d)
       self.assertErrback(d)
       results = ctx.get_rule_results('m:a')
       self.assertEqual(results[0], Status.FAILED)
       results = ctx.get_rule_results('m:b')
       self.assertEqual(results[0], Status.FAILED)
+      # Because m:a failed and stop_on_error is true, even though m:c is a
+      # succed rule, m:d, m:e and m:f should all be FAILED as well.
+      results = ctx.get_rule_results('m:d')
+      self.assertEqual(results[0], Status.FAILED)
+      results = ctx.get_rule_results('m:e')
+      self.assertEqual(results[0], Status.FAILED)
+      results = ctx.get_rule_results('m:f')
+      self.assertEqual(results[0], Status.FAILED)
 
-    # TODO(benvanik): test stop_on_error
     # TODO(benvanik): test raise_on_error
 
   def testCaching(self):
-    # TODO(benvanik): test caching and force arg
-    pass
+    rule_was_cached = [False]
+    class OutputRule(Rule):
+      class _Context(RuleContext):
+        def begin(self):
+          super(OutputRule._Context, self).begin()
+          # Make sure an output path is defined so that caching is meaningful.
+          self._append_output_paths(['./output'])
+          rule_was_cached[0] = self._check_if_cached()
+          self._succeed()
+
+    class NoSourceNoOutRule(Rule):
+      class _Context(RuleContext):
+        def begin(self):
+          super(NoSourceNoOutRule._Context, self).begin()
+          rule_was_cached[0] = self._check_if_cached()
+          self._succeed()
+
+    file_delta = cache.FileDelta()
+    class TestCache(cache.RuleCache):
+      def compute_delta(self, rule_path, mode, src_paths):
+        return file_delta
+    rule_cache = TestCache()
+
+    project = Project(modules=[Module('m', rules=[
+        OutputRule('a')])])
+    # With no changed_files in the FileDelta, cached should return true.
+    with BuildContext(self.build_env, project, rule_cache=rule_cache) as ctx:
+      file_delta = cache.FileDelta()
+      d = ctx.execute_sync(['m:a'])
+      self.assertTrue(rule_was_cached[0])
+
+    # With a changed_files entry in the FileDelta, cached should return false.
+    with BuildContext(self.build_env, project, rule_cache=rule_cache) as ctx:
+      file_delta = cache.FileDelta()
+      file_delta.changed_files = ['b']
+      d = ctx.execute_sync(['m:a'])
+      self.assertFalse(rule_was_cached[0])
+
+    # If any output files were removed, cached should return false.
+    with BuildContext(self.build_env, project, rule_cache=rule_cache) as ctx:
+      file_delta = cache.FileDelta()
+      file_delta.removed_files = ['b']
+      d = ctx.execute_sync(['m:a'])
+      self.assertFalse(rule_was_cached[0])
+
+    # If -f was passed, cached should return false.
+    with BuildContext(self.build_env, project, rule_cache=rule_cache, 
+                      force=True) as ctx:
+      file_delta = cache.FileDelta()
+      file_delta.removed_files = ['b']
+      d = ctx.execute_sync(['m:a'])
+      self.assertFalse(rule_was_cached[0])
+
+    # If there are no source or output files, then the cache check should be
+    # short-circuited and the cache check should return false.
+    project = Project(modules=[Module('m', rules=[
+        NoSourceNoOutRule('a')])])
+    with BuildContext(self.build_env, project, rule_cache=rule_cache) as ctx:
+      file_delta = cache.FileDelta()
+      file_delta.removed_files = ['b']
+      d = ctx.execute_sync(['m:a'])
+      self.assertFalse(rule_was_cached[0])
 
   def testBuild(self):
     project = Project(module_resolver=FileModuleResolver(self.root_path))
@@ -277,26 +350,29 @@ class RuleContextTest(FixtureTestCase):
     project = Project(module_resolver=FileModuleResolver(self.root_path))
     build_ctx = BuildContext(self.build_env, project)
 
-    rule = project.resolve_rule(':file_input')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
-    rule_outputs = build_ctx.get_rule_outputs(rule)
+    rule = ':file_input'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
+    rule_outputs = build_ctx.get_rule_outputs(resolved)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt']))
 
-    rule = project.resolve_rule(':local_txt')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
-    rule_outputs = build_ctx.get_rule_outputs(rule)
+    rule = ':local_txt'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
+    rule_outputs = build_ctx.get_rule_outputs(resolved)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt', 'b.txt', 'c.txt']))
 
-    rule = project.resolve_rule(':recursive_txt')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
-    rule_outputs = build_ctx.get_rule_outputs(rule)
+    rule = ':recursive_txt'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
+    rule_outputs = build_ctx.get_rule_outputs(resolved)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt', 'b.txt', 'c.txt', 'd.txt', 'e.txt']))
@@ -305,63 +381,67 @@ class RuleContextTest(FixtureTestCase):
     project = Project(module_resolver=FileModuleResolver(self.root_path))
     build_ctx = BuildContext(self.build_env, project)
 
-    rule = project.resolve_rule(':missing_txt')
+    rule = ':missing_txt'
     with self.assertRaises(OSError):
-      build_ctx._execute_rule(rule)
+      build_ctx.execute_sync([rule])
 
-    rule = project.resolve_rule(':missing_glob_txt')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
-    rule_outputs = build_ctx.get_rule_outputs(rule)
+    rule = ':missing_glob_txt'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
+    rule_outputs = build_ctx.get_rule_outputs(resolved)
     self.assertEqual(len(rule_outputs), 0)
 
-    rule = project.resolve_rule(':local_txt_filter')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
-    rule_outputs = build_ctx.get_rule_outputs(rule)
+    rule = ':local_txt_filter'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
+    rule_outputs = build_ctx.get_rule_outputs(resolved)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt', 'b.txt', 'c.txt']))
 
-    rule = project.resolve_rule(':recursive_txt_filter')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
-    rule_outputs = build_ctx.get_rule_outputs(rule)
+    rule = ':recursive_txt_filter'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
+    rule_outputs = build_ctx.get_rule_outputs(resolved)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt', 'b.txt', 'c.txt', 'd.txt', 'e.txt']))
 
-    rule = project.resolve_rule(':exclude_txt_filter')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
-    rule_outputs = build_ctx.get_rule_outputs(rule)
+    rule = ':exclude_txt_filter'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
+    rule_outputs = build_ctx.get_rule_outputs(resolved)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['dir_2', 'a.txt-a', 'b.txt-b', 'c.txt-c', 'g.not-txt', 'BUILD']))
 
-    rule = project.resolve_rule(':include_exclude_filter')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
-    rule_outputs = build_ctx.get_rule_outputs(rule)
+    rule = ':include_exclude_filter'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
+    rule_outputs = build_ctx.get_rule_outputs(resolved)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt-a', 'b.txt-b']))
 
-    rule = project.resolve_rule(':multi_exts')
-    build_ctx._execute_rule(rule)
-
-    rule = project.resolve_rule(':only_a')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
-    rule_outputs = build_ctx.get_rule_outputs(rule)
+    rule = ':only_a'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
+    rule_outputs = build_ctx.get_rule_outputs(resolved)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt-a']))
 
-    rule = project.resolve_rule(':only_ab')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
-    rule_outputs = build_ctx.get_rule_outputs(rule)
+    rule = ':only_ab'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
+    rule_outputs = build_ctx.get_rule_outputs(resolved)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt-a', 'b.txt-b']))
@@ -370,36 +450,33 @@ class RuleContextTest(FixtureTestCase):
     project = Project(module_resolver=FileModuleResolver(self.root_path))
     build_ctx = BuildContext(self.build_env, project)
 
-    rule = project.resolve_rule(':file_input')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
+    rule = ':file_input'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
     rule_outputs = build_ctx.get_rule_outputs(rule)
     self.assertNotEqual(len(rule_outputs), 0)
 
-    rule = project.resolve_rule(':rule_input')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
+    rule = ':rule_input'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
     rule_outputs = build_ctx.get_rule_outputs(rule)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt']))
 
-    rule = project.resolve_rule(':mixed_input')
-    d = build_ctx._execute_rule(rule)
-    self.assertTrue(d.is_done())
+    rule = ':mixed_input'
+    resolved = project.resolve_rule(rule)
+    success = build_ctx.execute_sync([rule])
+    self.assertTrue(success)
     rule_outputs = build_ctx.get_rule_outputs(rule)
     self.assertEqual(
         set([os.path.basename(f) for f in rule_outputs]),
         set(['a.txt', 'b.txt']))
 
-    rule = project.resolve_rule(':missing_input')
     with self.assertRaises(KeyError):
-      build_ctx._execute_rule(rule)
-
-    build_ctx = BuildContext(self.build_env, project)
-    rule = project.resolve_rule(':rule_input')
-    with self.assertRaises(RuntimeError):
-      build_ctx._execute_rule(rule)
+      build_ctx.execute_sync([':missing_input'])
 
   def _compare_path(self, result, expected):
     result = os.path.relpath(result, self.root_path)
