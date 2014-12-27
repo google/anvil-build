@@ -4,6 +4,7 @@
 __author__ = 'joshharrison@google.com'
 
 
+import re
 import unittest2
 
 from mock import call
@@ -94,7 +95,7 @@ class WorkUnitTest(unittest2.TestCase):
     # If is_duplicate returns True, the listener will not be added to the
     # WorkUnit, and will therefor not have its handler triggered on
     # updates.
-    mock_listener.is_duplicate.return_value = True
+    mock_listener.should_listen.return_value = False
     test = build_logging.WorkUnit('test')
     test.add_change_listener(mock_listener)
 
@@ -104,21 +105,21 @@ class WorkUnitTest(unittest2.TestCase):
     parent = build_logging.WorkUnit('parent')
     parent.add_child(child)
     mock_child_listener = MagicMock(name='child_listener')
-    mock_child_listener.is_duplicate.return_value = False
+    mock_child_listener.should_listen.return_value = True
     mock_parent_listener = MagicMock(name='parent_listener')
-    mock_parent_listener.is_duplicate.return_value = False
+    mock_parent_listener.should_listen.return_value = True
     child.add_change_listener(mock_child_listener)
     parent.add_change_listener(mock_parent_listener)
 
-    mock_child_listener.mock_calls = []
-    mock_parent_listener.mock_calls = []
     child.total = 100
     parent.total = 100
     parent.complete = 100
     expected_child_calls = [
+      call.should_listen(child),
       call.update(child, 'total', 100)
     ]
     expected_parent_calls = [
+      call.should_listen(parent),
       call.update(parent, 'total', 100),
       call.update(parent, 'total', 200),
       call.update(parent, 'complete', 100)
@@ -150,7 +151,7 @@ class LogSourceTest(unittest2.TestCase):
       log_source.log_warning('warning')
       log_source.log_error('error')
     expected = [
-      (enums.LogLevel.ERROR, 1, 'error')
+      (enums.LogLevel.ERROR, 1, None, 'error')
     ]
     self.assertListEqual(expected, log_source.buffered_messages)
 
@@ -163,9 +164,9 @@ class LogSourceTest(unittest2.TestCase):
       log_source.log_warning('warning')
       log_source.log_error('error')
     expected = [
-      (enums.LogLevel.INFO, 1, 'info'),
-      (enums.LogLevel.WARNING, 2, 'warning'),
-      (enums.LogLevel.ERROR, 3, 'error')
+      (enums.LogLevel.INFO, 1, None, 'info'),
+      (enums.LogLevel.WARNING, 2, None, 'warning'),
+      (enums.LogLevel.ERROR, 3, None, 'error')
     ]
     self.assertListEqual(expected, log_source.buffered_messages)
 
@@ -174,14 +175,14 @@ class LogSourceTest(unittest2.TestCase):
     with patch('__main__.util.timer') as mock_timer:
       mock_timer.side_effect = [1, 2, 3, 4]
       log_source.log_debug('debug')
-      log_source.log_info('info')
-      log_source.log_warning('warning')
+      log_source.log_info('info', 'test')
+      log_source.log_warning('warning', 'test')
       log_source.log_error('error')
     expected = [
-      (enums.LogLevel.DEBUG, 1, 'debug'),
-      (enums.LogLevel.INFO, 2, 'info'),
-      (enums.LogLevel.WARNING, 3, 'warning'),
-      (enums.LogLevel.ERROR, 4, 'error')
+      (enums.LogLevel.DEBUG, 1, None, 'debug'),
+      (enums.LogLevel.INFO, 2, 'test', 'info'),
+      (enums.LogLevel.WARNING, 3, 'test', 'warning'),
+      (enums.LogLevel.ERROR, 4, None, 'error')
     ]
     self.assertListEqual(expected, log_source.buffered_messages)
 
@@ -195,11 +196,70 @@ class LogSourceTest(unittest2.TestCase):
       log_source.log_warning('warning')
       log_source.log_error('error')
     expected = [
-      (enums.LogLevel.INFO, 1, 'info'),
-      (enums.LogLevel.WARNING, 2, 'warning'),
-      (enums.LogLevel.ERROR, 3, 'error')
+      (enums.LogLevel.INFO, 1, None, 'info'),
+      (enums.LogLevel.WARNING, 2, None, 'warning'),
+      (enums.LogLevel.ERROR, 3, None, 'error')
     ]
     self.assertListEqual(expected, log_source.buffered_messages)
+
+class WorkUnitLogSourceTest(unittest2.TestCase):
+
+  def setUp(self):
+    self.log_source = ls = build_logging.WorkUnitLogSource(
+      enums.Verbosity.VERBOSE)
+
+  def testAddingListenerGrabsStatus(self):
+    work_unit = build_logging.WorkUnit(name='test')
+    work_unit.add_change_listener(self.log_source)
+
+    msgs = self.log_source.buffered_messages
+    self.assertEquals(2, len(self.log_source.buffered_messages))
+    self.assertEquals(enums.LogLevel.DEBUG, msgs[0][0])
+    self.assertEquals('test', msgs[0][2])
+    self.assertEquals(enums.LogLevel.INFO, msgs[1][0])
+    self.assertEquals('test', msgs[1][2])
+
+  def testWorkUnitLogging(self):
+    work_unit = build_logging.WorkUnit(name='test')
+    work_unit.add_change_listener(self.log_source)
+
+    self.log_source.buffered_messages = []
+    msgs = self.log_source.buffered_messages
+
+    work_unit.total = 200
+    self.assertEquals(2, len(self.log_source.buffered_messages))
+    self.assertEquals(enums.LogLevel.DEBUG, msgs[0][0])
+    self.assertEquals('test', msgs[0][2])
+    self.assertEquals(enums.LogLevel.INFO, msgs[1][0])
+    self.assertRegexpMatches(msgs[1][3], re.compile('0 of 200'))
+    self.assertRegexpMatches(msgs[1][3], re.compile('[RUNNING]'))
+    self.assertEquals('test', msgs[1][2])
+    work_unit.complete = 10
+    self.assertEquals(4, len(self.log_source.buffered_messages))
+    self.assertEquals(enums.LogLevel.DEBUG, msgs[2][0])
+    self.assertEquals('test', msgs[2][2])
+    self.assertEquals(enums.LogLevel.INFO, msgs[3][0])
+    self.assertRegexpMatches(msgs[3][3], re.compile('10 of 200'))
+    self.assertRegexpMatches(msgs[3][3], re.compile('[RUNNING]'))
+    self.assertEquals('test', msgs[3][2])
+
+    work_unit.complete = 200
+    self.assertEquals(6, len(self.log_source.buffered_messages))
+    self.assertEquals(enums.LogLevel.DEBUG, msgs[4][0])
+    self.assertEquals('test', msgs[4][2])
+    self.assertEquals(enums.LogLevel.INFO, msgs[5][0])
+    self.assertRegexpMatches(msgs[5][3], re.compile('[SUCCEEDED]'))
+    self.assertEquals('test', msgs[5][2])
+
+    work_unit.complete = 0
+    work_unit.total = 0
+    self.assertEquals(10, len(self.log_source.buffered_messages))
+    self.assertEquals(enums.LogLevel.DEBUG, msgs[8][0])
+    self.assertEquals('test', msgs[8][2])
+    self.assertEquals(enums.LogLevel.INFO, msgs[9][0])
+    self.assertRegexpMatches(msgs[9][3], re.compile('[SKIPPED]'))
+    self.assertEquals('test', msgs[9][2])
+    
 
 if __name__ == '__main__':
   unittest2.main()

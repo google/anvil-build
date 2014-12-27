@@ -29,3 +29,13 @@ class Verbosity:
   NORMAL = 1
   VERBOSE = 2
   INHERIT = 3
+
+def status_to_string(value):
+  to_string_values = {
+    Status.WAITING: 'WAITING',
+    Status.RUNNING: 'RUNNING',
+    Status.SUCCEEDED: 'SUCCEEDED',
+    Status.FAILED: 'FAILED',
+    Status.SKIPPED: 'SKIPPED'
+  }
+  return to_string_values[value]

@@ -152,14 +152,16 @@ class WorkUnit(object):
     Change listeners will receive notifications of updates to values on this
     WorkUnit or any of its children. Listeners must implement the following
     methods:
-      should_listen(WorkUnit):Boolean - Should return true if this listener
+      will_listen(WorkUnit):Boolean - Should return true if this listener
           should listen to this WorkUnit. Gives a listener a chance to keep
-          from receiving updates for a given WorkUnit.
+          from receiving updates for a given WorkUnit. If the listener returns
+          True, it should be assumed that WorkUnit passed in will be run and
+          will send updates to the listener.
       update(WorkUnit, String, *) - A method called when updates occur on a
           WorkUnit. The method is called with the WorkUnit that changed, the
           name of the attribute that was updated and the updated value.
     """
-    if not listener.is_duplicate(self):
+    if listener.should_listen(self):
       self.listeners.append(listener)
 
   def _validate_and_update(self, attribute):
@@ -264,31 +266,35 @@ class LogSource(object):
     """
     child.parent = self
 
-  def log_debug(self, message):
+  def log_debug(self, message, name=None):
     """Logs a message at DEBUG log level.
 
     DEBUG log level is only recorded on LogSources with VERBOSE verbosity.
 
     Args:
       message: A string message to be logged.
+      name: A string name representing the source of the message. Defaults to
+          none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.DEBUG):
       self.buffered_messages.append(
-        (enums.LogLevel.DEBUG, util.timer(), message))
+        (enums.LogLevel.DEBUG, util.timer(), name, message))
 
-  def log_info(self, message):
+  def log_info(self, message, name=None):
     """Logs a message at INFO log level.
 
     INFO log level is recorded on LogSources with VERBOSE or NORMAL verbosity.
 
     Args:
       message: A string message to be logged.
+      name: A string name representing the source of the message. Defaults to
+          none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.INFO):
       self.buffered_messages.append(
-        (enums.LogLevel.INFO, util.timer(), message))
+        (enums.LogLevel.INFO, util.timer(), name, message))
 
-  def log_warning(self, message):
+  def log_warning(self, message, name=None):
     """Logs a message at WARNING log level.
 
     WARNING log level is recorded on LogSources with VERBOSE or NORMAL
@@ -296,22 +302,26 @@ class LogSource(object):
 
     Args:
       message: A string message to be logged.
+      name: A string name representing the source of the message. Defaults to
+          none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.WARNING):
       self.buffered_messages.append(
-        (enums.LogLevel.WARNING, util.timer(), message))
+        (enums.LogLevel.WARNING, util.timer(), name, message))
 
-  def log_error(self, message):
+  def log_error(self, message, name=None):
     """Logs a message at ERROR log level.
 
     ERROR log level is recorded on LogSources with any verbosity level.
 
     Args:
       message: A string message to be logged.
+      name: A string name representing the source of the message. Defaults to
+          none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.ERROR):
       self.buffered_messages.append(
-        (enums.LogLevel.ERROR, util.timer(), message))
+        (enums.LogLevel.ERROR, util.timer(), name, message))
 
   def _should_log(self, level):
     """Determines whether a log message should be recorded.
@@ -336,3 +346,58 @@ class LogSource(object):
         return True
     elif self.verbosity == enums.Verbosity.VERBOSE:
       return True
+
+
+class WorkUnitLogSource(LogSource):
+  """A LogSource meant to function as a listener on WorkUnits.
+  """
+
+  def __init__(self, verbosity=enums.Verbosity.INHERIT):
+    super(WorkUnitLogSource, self).__init__(verbosity)
+
+  def should_listen(self, work_unit):
+    """All work_units should be listened to.
+
+    Args:
+      work_unit: The WorkUnit this listener is being asked to listen to.
+    Returns:
+      Returns True if the WorkUnit should be observed by this LogSource.
+    """
+    self.log_debug(
+      'Adding listener to WorkUnit named \'%s\' with a status of %s.' %
+      (work_unit.name, enums.status_to_string(work_unit.get_status())),
+      work_unit.name)
+    self.log_info(
+      '[%s]: Logging %s' % (
+        enums.status_to_string(work_unit.get_status()), work_unit.name),
+      work_unit.name)
+    return True
+
+  def update(self, work_unit, attribute, value):
+    """Receives updates from monitored WorkUnits.
+
+    Given updates for monitored WorkUnits, this method transforms a WorkUnit
+    update into a log message. It logs all calls to this method at DEBUG
+    level, passing all arguments. It then logs formatted messages at INFO
+    level recording the status of the WorkUnit being updated.
+
+    Args:
+      work_unit: The WorkUnit that was updated.
+      attribute: The attribute who's value was updated.
+      value: The new attribute value.
+    """
+    self.log_debug(
+      'Received an update - WorkUnit: %s, Attr: %s, Value: %s' % (
+        work_unit.name, attribute, value), work_unit.name)
+    if work_unit.get_status() == enums.Status.RUNNING:
+      running = enums.status_to_string(work_unit.get_status())
+      self.log_info(
+        '[%s]: %s - %s of %s' % (
+          running, work_unit.name, work_unit.complete, work_unit.total),
+        work_unit.name)
+    else:
+      status_string = enums.status_to_string(work_unit.get_status())
+      self.log_info(
+        '[%s]: %s' % (status_string, work_unit.name), work_unit.name)
+          
+      
