@@ -7,10 +7,12 @@ __author__ = 'joshharrison@google.com'
 import unittest2
 
 from mock import call
+from mock import patch
 from mock import MagicMock
 
 from anvil import build_logging
 from anvil import enums
+from anvil import util
 
 
 class WorkUnitTest(unittest2.TestCase):
@@ -123,7 +125,81 @@ class WorkUnitTest(unittest2.TestCase):
     ]
     self.assertTrue(expected_child_calls == mock_child_listener.mock_calls)
     self.assertTrue(expected_parent_calls == mock_parent_listener.mock_calls)
-    
+
+
+class LogSourceTest(unittest2.TestCase):
+
+  def testVerbosity(self):
+    child_source = build_logging.LogSource(enums.Verbosity.VERBOSE)
+    self.assertEquals(enums.Verbosity.VERBOSE, child_source.verbosity)
+    child_source = build_logging.LogSource()
+    self.assertEquals(enums.Verbosity.NORMAL, child_source.verbosity)
+    child_source = build_logging.LogSource()
+    parent_source = build_logging.LogSource(enums.Verbosity.VERBOSE)
+    parent_source.add_child(child_source)
+    self.assertEquals(enums.Verbosity.VERBOSE, child_source.verbosity)
+    self.assertEquals(enums.Verbosity.VERBOSE, parent_source.verbosity)
+
+  def testLogBasedOnVerbosity(self):
+    log_source = build_logging.LogSource()
+    log_source.verbosity = enums.Verbosity.SILENT
+    with patch('__main__.util.timer') as mock_timer:
+      mock_timer.side_effect = [1]
+      log_source.log_debug('debug')
+      log_source.log_info('info')
+      log_source.log_warning('warning')
+      log_source.log_error('error')
+    expected = [
+      (enums.LogLevel.ERROR, 1, 'error')
+    ]
+    self.assertListEqual(expected, log_source.buffered_messages)
+
+    log_source = build_logging.LogSource()
+    log_source.verbosity = enums.Verbosity.NORMAL
+    with patch('__main__.util.timer') as mock_timer:
+      mock_timer.side_effect = [1, 2, 3]
+      log_source.log_debug('debug')
+      log_source.log_info('info')
+      log_source.log_warning('warning')
+      log_source.log_error('error')
+    expected = [
+      (enums.LogLevel.INFO, 1, 'info'),
+      (enums.LogLevel.WARNING, 2, 'warning'),
+      (enums.LogLevel.ERROR, 3, 'error')
+    ]
+    self.assertListEqual(expected, log_source.buffered_messages)
+
+    log_source = build_logging.LogSource()
+    log_source.verbosity = enums.Verbosity.VERBOSE
+    with patch('__main__.util.timer') as mock_timer:
+      mock_timer.side_effect = [1, 2, 3, 4]
+      log_source.log_debug('debug')
+      log_source.log_info('info')
+      log_source.log_warning('warning')
+      log_source.log_error('error')
+    expected = [
+      (enums.LogLevel.DEBUG, 1, 'debug'),
+      (enums.LogLevel.INFO, 2, 'info'),
+      (enums.LogLevel.WARNING, 3, 'warning'),
+      (enums.LogLevel.ERROR, 4, 'error')
+    ]
+    self.assertListEqual(expected, log_source.buffered_messages)
+
+    log_source = build_logging.LogSource()
+    # Inherit should default to normal of no parent exists.
+    log_source.verbosity = enums.Verbosity.INHERIT
+    with patch('__main__.util.timer') as mock_timer:
+      mock_timer.side_effect = [1, 2, 3]
+      log_source.log_debug('debug')
+      log_source.log_info('info')
+      log_source.log_warning('warning')
+      log_source.log_error('error')
+    expected = [
+      (enums.LogLevel.INFO, 1, 'info'),
+      (enums.LogLevel.WARNING, 2, 'warning'),
+      (enums.LogLevel.ERROR, 3, 'error')
+    ]
+    self.assertListEqual(expected, log_source.buffered_messages)
 
 if __name__ == '__main__':
   unittest2.main()

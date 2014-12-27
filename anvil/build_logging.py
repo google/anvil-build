@@ -38,6 +38,10 @@ class WorkUnit(object):
   @property
   def complete(self):
     """Returns a complete count including all child WorkUnits.
+
+    Returns:
+      A number representing the total complete work units encompassed by this
+      WorkUnit and all its child WorkUnits.
     """
     complete = 0
     for child in self.children:
@@ -59,6 +63,10 @@ class WorkUnit(object):
   @property
   def total(self):
     """Returns a complete count including all parent WorkUnits.
+
+    Returns:
+      A number representing the total work units encompassed by this WorkUnit
+      and all its child WorkUnits.
     """
     total = 0
     for child in self.children:
@@ -78,8 +86,11 @@ class WorkUnit(object):
     self._validate_and_update('total')
 
   @property
-  def exception(self)
+  def exception(self):
     """Gets the exception value on this WorkUnit or any children.
+
+    Returns:
+      An exception object or None if one is not set.
     """
     for child in self.children:
       if child.exception:
@@ -108,6 +119,9 @@ class WorkUnit(object):
     and total units used for this determination include those set on any child
     WorkUnits. If total and complete are equal and greater than 0, then the
     WorkUnit is set to SUCCEEDED.
+
+    Returns:
+      An enums.Status value corresponding to the state this WorkUnit is in.
     """
     if self._is_waiting():
       return enums.Status.WAITING
@@ -180,6 +194,9 @@ class WorkUnit(object):
 
   def _is_waiting(self):
     """Returns true iff this WorkUnit and all its child units are WAITING.
+
+    Returns:
+      True iff this WorkUnit and all its child units are WAITING.
     """
     if self._waiting:
       for child in self.children:
@@ -187,3 +204,135 @@ class WorkUnit(object):
           self._waiting = False
           break
     return self._waiting
+
+
+class LogSource(object):
+  """A LogSource can be used to log messages filtered on a verbosity level.
+
+  The LogSource class allows the buffered logging of messages at different
+  severity levels and filtered off of Verbosity levels. LogSources can be part
+  of a parent-child relationship, in which case child LogSources can make use
+  of the parent's Verbosity level and LogSinks.
+
+  Messages logged to a LogSource are buffered in the source's buffered_messages
+  collection iff the severity of the message passes the Verbosity filter on the
+  LogSource.
+  """
+
+  def __init__(self, verbosity=enums.Verbosity.INHERIT):
+    """Sets up the LogSource with a default Verbosity of INHERIT.
+
+    Args:
+      verbosty: A enums.Verbosity value. Defaults to INHERIT. Note that if a
+          parent LogSource does not exist, then this LogSource will use a NORMAL
+          verbosity level.
+    """
+    self._verbosity = verbosity
+    self.buffered_messages = []
+    self.parent = None
+
+  @property
+  def verbosity(self):
+    """Returns the effective verbosity level of this LogSource.
+
+    If this LogSource has a verbosity level of INHERIT and a parent exists, then
+    this accessor will return the verbosity level of the parent.
+
+    Returns:
+      The enums.Verbosity level of this LogSource.
+    """
+    if not self.parent == None and self._verbosity == enums.Verbosity.INHERIT:
+      return self.parent.verbosity
+    elif self.parent == None and self._verbosity == enums.Verbosity.INHERIT:
+      return enums.Verbosity.NORMAL
+    return self._verbosity
+
+  @verbosity.setter
+  def verbosity(self, verbosity):
+    """Sets the enums.Verbosity level of this LogSource.
+
+    Args:
+      verbosity: A enums.Verbosity level.
+    """
+    self._verbosity = verbosity
+
+  def add_child(self, child):
+    """Adds a child log source.
+
+    Args:
+      child: A LogSource that will be a child of this LogSource.
+    """
+    child.parent = self
+
+  def log_debug(self, message):
+    """Logs a message at DEBUG log level.
+
+    DEBUG log level is only recorded on LogSources with VERBOSE verbosity.
+
+    Args:
+      message: A string message to be logged.
+    """
+    if self._should_log(enums.LogLevel.DEBUG):
+      self.buffered_messages.append(
+        (enums.LogLevel.DEBUG, util.timer(), message))
+
+  def log_info(self, message):
+    """Logs a message at INFO log level.
+
+    INFO log level is recorded on LogSources with VERBOSE or NORMAL verbosity.
+
+    Args:
+      message: A string message to be logged.
+    """
+    if self._should_log(enums.LogLevel.INFO):
+      self.buffered_messages.append(
+        (enums.LogLevel.INFO, util.timer(), message))
+
+  def log_warning(self, message):
+    """Logs a message at WARNING log level.
+
+    WARNING log level is recorded on LogSources with VERBOSE or NORMAL
+    verbosity.
+
+    Args:
+      message: A string message to be logged.
+    """
+    if self._should_log(enums.LogLevel.WARNING):
+      self.buffered_messages.append(
+        (enums.LogLevel.WARNING, util.timer(), message))
+
+  def log_error(self, message):
+    """Logs a message at ERROR log level.
+
+    ERROR log level is recorded on LogSources with any verbosity level.
+
+    Args:
+      message: A string message to be logged.
+    """
+    if self._should_log(enums.LogLevel.ERROR):
+      self.buffered_messages.append(
+        (enums.LogLevel.ERROR, util.timer(), message))
+
+  def _should_log(self, level):
+    """Determines whether a log message should be recorded.
+
+    Given an enums.LogLevel value and the current enums.Verbosity level of this
+    LogSource, this method determines whether the message should be recorded.
+
+    Returns:
+      Returns true if the passed in LogLevel should be recorded given the
+      Verbosity level of this LogSource.
+    """ 
+    # Errors should always be shown.
+    if level == enums.LogLevel.ERROR:
+      return True
+    # Otherwise, switch off of the log level and the current verbosity.
+    if self.verbosity == enums.Verbosity.SILENT:
+      return False
+    elif self.verbosity == enums.Verbosity.NORMAL:
+      if level == enums.LogLevel.DEBUG:
+        return False
+      else:
+        return True
+    elif self.verbosity == enums.Verbosity.VERBOSE:
+      return True
