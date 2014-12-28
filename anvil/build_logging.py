@@ -262,10 +262,15 @@ class LogSource(object):
   def add_child(self, child):
     """Adds a child log source.
 
+    Any LogSinks set on the parent will also be set on the child so that all
+    messages from children are received.
+
     Args:
       child: A LogSource that will be a child of this LogSource.
     """
     child.parent = self
+    for log_sink in self.log_sinks:
+      child.add_log_sink(log_sink)
 
   def add_log_sink(self, log_sink):
     """Adds a LogSink to this LogSource.
@@ -276,6 +281,9 @@ class LogSource(object):
     Args:
       log_sink: A LogSink object capable of listening for LogSource messages.
     """
+    if log_sink in self.log_sinks:
+      return
+
     self.log_sinks.append(log_sink)
     for message in self.buffered_messages:
       log_sink.log(message)

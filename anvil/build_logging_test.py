@@ -202,6 +202,13 @@ class LogSourceTest(unittest2.TestCase):
     ]
     self.assertListEqual(expected, log_source.buffered_messages)
 
+  def testNoDuplicateLogSinks(self):
+    log_sink = MagicMock()
+    log_source = build_logging.LogSource()
+    log_source.add_log_sink(log_sink)
+    log_source.add_log_sink(log_sink)
+    self.assertEquals(1, len(log_source.log_sinks))
+
   def testMessagesSentToLogSink(self):
     log_source = build_logging.LogSource(enums.Verbosity.VERBOSE)
     with patch('__main__.util.timer') as mock_timer:
@@ -226,6 +233,21 @@ class LogSourceTest(unittest2.TestCase):
       log_source.log_debug('debug', 'bar')
     expected = [
       call.log((enums.LogLevel.DEBUG, 5, 'bar', 'debug'))
+    ]
+    self.assertEquals(expected, log_sink.mock_calls)
+
+  def testChildMessagesDetected(self):
+    child_source = build_logging.LogSource(enums.Verbosity.INHERIT)
+    parent_source = build_logging.LogSource(enums.Verbosity.VERBOSE)
+    log_sink = MagicMock()
+    parent_source.add_log_sink(log_sink)
+    parent_source.add_child(child_source)
+
+    with patch('__main__.util.timer') as mock_timer:
+      mock_timer.side_effect = [1]
+      child_source.log_debug('debug', 'foo')
+    expected = [
+      call.log((enums.LogLevel.DEBUG, 1, 'foo', 'debug'))
     ]
     self.assertEquals(expected, log_sink.mock_calls)
     
