@@ -202,6 +202,34 @@ class LogSourceTest(unittest2.TestCase):
     ]
     self.assertListEqual(expected, log_source.buffered_messages)
 
+  def testMessagesSentToLogSink(self):
+    log_source = build_logging.LogSource(enums.Verbosity.VERBOSE)
+    with patch('__main__.util.timer') as mock_timer:
+      mock_timer.side_effect = [1, 2, 3, 4]
+      log_source.log_debug('debug', 'bar')
+      log_source.log_info('info', 'bar')
+      log_source.log_warning('warning', 'foo')
+      log_source.log_error('error', 'foo')
+    log_sink = MagicMock()
+    log_source.add_log_sink(log_sink)
+    expected = [
+      call.log((enums.LogLevel.DEBUG, 1, 'bar', 'debug')),
+      call.log((enums.LogLevel.INFO, 2, 'bar', 'info')),
+      call.log((enums.LogLevel.WARNING, 3, 'foo', 'warning')),
+      call.log((enums.LogLevel.ERROR, 4, 'foo', 'error'))
+    ]
+    self.assertEquals(expected, log_sink.mock_calls)
+
+    log_sink.mock_calls = []
+    with patch('__main__.util.timer') as mock_timer:
+      mock_timer.side_effect = [5]
+      log_source.log_debug('debug', 'bar')
+    expected = [
+      call.log((enums.LogLevel.DEBUG, 5, 'bar', 'debug'))
+    ]
+    self.assertEquals(expected, log_sink.mock_calls)
+    
+
 class WorkUnitLogSourceTest(unittest2.TestCase):
 
   def setUp(self):

@@ -43,6 +43,7 @@ CLASSIFIERS = [
 INSTALL_REQUIRES = [
     'argparse>=1.2.1',
     'autobahn>=0.5.1',
+    'blessings>=1.6',
     'glob2>=0.3',
     'networkx==1.7',
     'pip>=1.1',

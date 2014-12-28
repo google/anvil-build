@@ -231,6 +231,7 @@ class LogSource(object):
     """
     self._verbosity = verbosity
     self.buffered_messages = []
+    self.log_sinks = []
     self.parent = None
 
   @property
@@ -266,6 +267,19 @@ class LogSource(object):
     """
     child.parent = self
 
+  def add_log_sink(self, log_sink):
+    """Adds a LogSink to this LogSource.
+
+    Adds a listening LogSink to this LogSource. If there any buffered messages,
+    they are delegated synchronously to the added LogSink.
+
+    Args:
+      log_sink: A LogSink object capable of listening for LogSource messages.
+    """
+    self.log_sinks.append(log_sink)
+    for message in self.buffered_messages:
+      log_sink.log(message)
+
   def log_debug(self, message, name=None):
     """Logs a message at DEBUG log level.
 
@@ -277,7 +291,7 @@ class LogSource(object):
           none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.DEBUG):
-      self.buffered_messages.append(
+      self._log_internal(
         (enums.LogLevel.DEBUG, util.timer(), name, message))
 
   def log_info(self, message, name=None):
@@ -291,7 +305,7 @@ class LogSource(object):
           none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.INFO):
-      self.buffered_messages.append(
+      self._log_internal(
         (enums.LogLevel.INFO, util.timer(), name, message))
 
   def log_warning(self, message, name=None):
@@ -306,7 +320,7 @@ class LogSource(object):
           none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.WARNING):
-      self.buffered_messages.append(
+      self._log_internal(
         (enums.LogLevel.WARNING, util.timer(), name, message))
 
   def log_error(self, message, name=None):
@@ -320,7 +334,7 @@ class LogSource(object):
           none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.ERROR):
-      self.buffered_messages.append(
+      self._log_internal(
         (enums.LogLevel.ERROR, util.timer(), name, message))
 
   def _should_log(self, level):
@@ -346,6 +360,19 @@ class LogSource(object):
         return True
     elif self.verbosity == enums.Verbosity.VERBOSE:
       return True
+
+  def _log_internal(self, message):
+    """A private helper method for logging messages.
+
+    Args:
+      message: A tuple containing the LogLevel, the time the message was
+          received, the name sent with the message and the mesage itself.
+    """
+    if self.log_sinks:
+      for log_sink in self.log_sinks:
+        log_sink.log(message)
+    else:
+      self.buffered_messages.append(message)
 
 
 class WorkUnitLogSource(LogSource):
