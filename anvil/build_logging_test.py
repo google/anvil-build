@@ -92,7 +92,7 @@ class WorkUnitTest(unittest2.TestCase):
 
   def testChangeListenersCalled(self):
     mock_listener = MagicMock(name='listener')
-    # If is_duplicate returns True, the listener will not be added to the
+    # If should_listen returns True, the listener will not be added to the
     # WorkUnit, and will therefor not have its handler triggered on
     # updates.
     mock_listener.should_listen.return_value = False
