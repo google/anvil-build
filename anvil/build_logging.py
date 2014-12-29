@@ -299,6 +299,8 @@ class LogSource(object):
           none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.DEBUG):
+      message = '[%s] %s' % (
+        enums.log_level_to_string(enums.LogLevel.DEBUG), message)
       self._log_internal(
         (enums.LogLevel.DEBUG, util.timer(), name, message))
 
@@ -313,6 +315,8 @@ class LogSource(object):
           none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.INFO):
+      message = '[%s] %s' % (
+        enums.log_level_to_string(enums.LogLevel.INFO), message)
       self._log_internal(
         (enums.LogLevel.INFO, util.timer(), name, message))
 
@@ -328,6 +332,8 @@ class LogSource(object):
           none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.WARNING):
+      message = '[%s] %s' % (
+        enums.log_level_to_string(enums.LogLevel.WARNING), message)
       self._log_internal(
         (enums.LogLevel.WARNING, util.timer(), name, message))
 
@@ -342,6 +348,8 @@ class LogSource(object):
           none. How this is used is up to the LogSource.
     """
     if self._should_log(enums.LogLevel.ERROR):
+      message = '[%s] %s' % (
+        enums.log_level_to_string(enums.LogLevel.ERROR), message)
       self._log_internal(
         (enums.LogLevel.ERROR, util.timer(), name, message))
 
@@ -403,7 +411,7 @@ class WorkUnitLogSource(LogSource):
       (work_unit.name, enums.status_to_string(work_unit.get_status())),
       work_unit.name)
     self.log_info(
-      '[%s]: Logging %s' % (
+      '%s: Logging %s' % (
         enums.status_to_string(work_unit.get_status()), work_unit.name),
       work_unit.name)
     return True
@@ -427,12 +435,12 @@ class WorkUnitLogSource(LogSource):
     if work_unit.get_status() == enums.Status.RUNNING:
       running = enums.status_to_string(work_unit.get_status())
       self.log_info(
-        '[%s]: %s - %s of %s' % (
+        '%s: %s - %s of %s' % (
           running, work_unit.name, work_unit.complete, work_unit.total),
         work_unit.name)
     else:
       status_string = enums.status_to_string(work_unit.get_status())
       self.log_info(
-        '[%s]: %s' % (status_string, work_unit.name), work_unit.name)
+        '%s: %s' % (status_string, work_unit.name), work_unit.name)
           
       

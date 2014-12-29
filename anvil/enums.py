@@ -39,3 +39,12 @@ def status_to_string(value):
     Status.SKIPPED: 'SKIPPED'
   }
   return to_string_values[value]
+
+def log_level_to_string(value):
+  to_string_values = {
+    LogLevel.DEBUG: 'DEBUG',
+    LogLevel.INFO: 'INFO',
+    LogLevel.WARNING: 'WARNING',
+    LogLevel.ERROR: 'ERROR'
+  }
+  return to_string_values[value]

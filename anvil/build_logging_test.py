@@ -151,7 +151,7 @@ class LogSourceTest(unittest2.TestCase):
       log_source.log_warning('warning')
       log_source.log_error('error')
     expected = [
-      (enums.LogLevel.ERROR, 1, None, 'error')
+      (enums.LogLevel.ERROR, 1, None, '[ERROR] error')
     ]
     self.assertListEqual(expected, log_source.buffered_messages)
 
@@ -164,9 +164,9 @@ class LogSourceTest(unittest2.TestCase):
       log_source.log_warning('warning')
       log_source.log_error('error')
     expected = [
-      (enums.LogLevel.INFO, 1, None, 'info'),
-      (enums.LogLevel.WARNING, 2, None, 'warning'),
-      (enums.LogLevel.ERROR, 3, None, 'error')
+      (enums.LogLevel.INFO, 1, None, '[INFO] info'),
+      (enums.LogLevel.WARNING, 2, None, '[WARNING] warning'),
+      (enums.LogLevel.ERROR, 3, None, '[ERROR] error')
     ]
     self.assertListEqual(expected, log_source.buffered_messages)
 
@@ -179,10 +179,10 @@ class LogSourceTest(unittest2.TestCase):
       log_source.log_warning('warning', 'test')
       log_source.log_error('error')
     expected = [
-      (enums.LogLevel.DEBUG, 1, None, 'debug'),
-      (enums.LogLevel.INFO, 2, 'test', 'info'),
-      (enums.LogLevel.WARNING, 3, 'test', 'warning'),
-      (enums.LogLevel.ERROR, 4, None, 'error')
+      (enums.LogLevel.DEBUG, 1, None, '[DEBUG] debug'),
+      (enums.LogLevel.INFO, 2, 'test', '[INFO] info'),
+      (enums.LogLevel.WARNING, 3, 'test', '[WARNING] warning'),
+      (enums.LogLevel.ERROR, 4, None, '[ERROR] error')
     ]
     self.assertListEqual(expected, log_source.buffered_messages)
 
@@ -196,9 +196,9 @@ class LogSourceTest(unittest2.TestCase):
       log_source.log_warning('warning')
       log_source.log_error('error')
     expected = [
-      (enums.LogLevel.INFO, 1, None, 'info'),
-      (enums.LogLevel.WARNING, 2, None, 'warning'),
-      (enums.LogLevel.ERROR, 3, None, 'error')
+      (enums.LogLevel.INFO, 1, None, '[INFO] info'),
+      (enums.LogLevel.WARNING, 2, None, '[WARNING] warning'),
+      (enums.LogLevel.ERROR, 3, None, '[ERROR] error')
     ]
     self.assertListEqual(expected, log_source.buffered_messages)
 
@@ -220,10 +220,10 @@ class LogSourceTest(unittest2.TestCase):
     log_sink = MagicMock()
     log_source.add_log_sink(log_sink)
     expected = [
-      call.log((enums.LogLevel.DEBUG, 1, 'bar', 'debug')),
-      call.log((enums.LogLevel.INFO, 2, 'bar', 'info')),
-      call.log((enums.LogLevel.WARNING, 3, 'foo', 'warning')),
-      call.log((enums.LogLevel.ERROR, 4, 'foo', 'error'))
+      call.log((enums.LogLevel.DEBUG, 1, 'bar', '[DEBUG] debug')),
+      call.log((enums.LogLevel.INFO, 2, 'bar', '[INFO] info')),
+      call.log((enums.LogLevel.WARNING, 3, 'foo', '[WARNING] warning')),
+      call.log((enums.LogLevel.ERROR, 4, 'foo', '[ERROR] error'))
     ]
     self.assertEquals(expected, log_sink.mock_calls)
 
@@ -232,7 +232,7 @@ class LogSourceTest(unittest2.TestCase):
       mock_timer.side_effect = [5]
       log_source.log_debug('debug', 'bar')
     expected = [
-      call.log((enums.LogLevel.DEBUG, 5, 'bar', 'debug'))
+      call.log((enums.LogLevel.DEBUG, 5, 'bar', '[DEBUG] debug'))
     ]
     self.assertEquals(expected, log_sink.mock_calls)
 
@@ -247,7 +247,7 @@ class LogSourceTest(unittest2.TestCase):
       mock_timer.side_effect = [1]
       child_source.log_debug('debug', 'foo')
     expected = [
-      call.log((enums.LogLevel.DEBUG, 1, 'foo', 'debug'))
+      call.log((enums.LogLevel.DEBUG, 1, 'foo', '[DEBUG] debug'))
     ]
     self.assertEquals(expected, log_sink.mock_calls)
     
@@ -282,7 +282,7 @@ class WorkUnitLogSourceTest(unittest2.TestCase):
     self.assertEquals('test', msgs[0][2])
     self.assertEquals(enums.LogLevel.INFO, msgs[1][0])
     self.assertRegexpMatches(msgs[1][3], re.compile('0 of 200'))
-    self.assertRegexpMatches(msgs[1][3], re.compile('[RUNNING]'))
+    self.assertRegexpMatches(msgs[1][3], re.compile('RUNNING'))
     self.assertEquals('test', msgs[1][2])
     work_unit.complete = 10
     self.assertEquals(4, len(self.log_source.buffered_messages))
@@ -290,7 +290,7 @@ class WorkUnitLogSourceTest(unittest2.TestCase):
     self.assertEquals('test', msgs[2][2])
     self.assertEquals(enums.LogLevel.INFO, msgs[3][0])
     self.assertRegexpMatches(msgs[3][3], re.compile('10 of 200'))
-    self.assertRegexpMatches(msgs[3][3], re.compile('[RUNNING]'))
+    self.assertRegexpMatches(msgs[3][3], re.compile('RUNNING'))
     self.assertEquals('test', msgs[3][2])
 
     work_unit.complete = 200
@@ -298,7 +298,7 @@ class WorkUnitLogSourceTest(unittest2.TestCase):
     self.assertEquals(enums.LogLevel.DEBUG, msgs[4][0])
     self.assertEquals('test', msgs[4][2])
     self.assertEquals(enums.LogLevel.INFO, msgs[5][0])
-    self.assertRegexpMatches(msgs[5][3], re.compile('[SUCCEEDED]'))
+    self.assertRegexpMatches(msgs[5][3], re.compile('SUCCEEDED'))
     self.assertEquals('test', msgs[5][2])
 
     work_unit.complete = 0
@@ -307,7 +307,7 @@ class WorkUnitLogSourceTest(unittest2.TestCase):
     self.assertEquals(enums.LogLevel.DEBUG, msgs[8][0])
     self.assertEquals('test', msgs[8][2])
     self.assertEquals(enums.LogLevel.INFO, msgs[9][0])
-    self.assertRegexpMatches(msgs[9][3], re.compile('[SKIPPED]'))
+    self.assertRegexpMatches(msgs[9][3], re.compile('SKIPPED'))
     self.assertEquals('test', msgs[9][2])
     
 
