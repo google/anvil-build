@@ -1,6 +1,8 @@
 """Defines the anvil logging module.
 """
 
+__author__ = 'joshharrison@google.com'
+
 from anvil import enums
 from anvil import util
 
