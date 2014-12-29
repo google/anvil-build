@@ -20,16 +20,9 @@ from anvil.async import Deferred
 from anvil import cache
 from anvil import graph
 from anvil import project
+from anvil.enums import Status
 from anvil import task
 from anvil import util
-
-
-class Status:
-  """Enumeration describing the status of a context."""
-  WAITING = 0
-  RUNNING = 1
-  SUCCEEDED = 2
-  FAILED = 3
 
 
 class BuildEnvironment(object):
