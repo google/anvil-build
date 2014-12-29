@@ -144,7 +144,7 @@ class LogSourceTest(unittest2.TestCase):
   def testLogBasedOnVerbosity(self):
     log_source = build_logging.LogSource()
     log_source.verbosity = enums.Verbosity.SILENT
-    with patch('__main__.util.timer') as mock_timer:
+    with patch('anvil.util.timer') as mock_timer:
       mock_timer.side_effect = [1]
       log_source.log_debug('debug')
       log_source.log_info('info')
@@ -157,7 +157,7 @@ class LogSourceTest(unittest2.TestCase):
 
     log_source = build_logging.LogSource()
     log_source.verbosity = enums.Verbosity.NORMAL
-    with patch('__main__.util.timer') as mock_timer:
+    with patch('anvil.util.timer') as mock_timer:
       mock_timer.side_effect = [1, 2, 3]
       log_source.log_debug('debug')
       log_source.log_info('info')
@@ -172,7 +172,7 @@ class LogSourceTest(unittest2.TestCase):
 
     log_source = build_logging.LogSource()
     log_source.verbosity = enums.Verbosity.VERBOSE
-    with patch('__main__.util.timer') as mock_timer:
+    with patch('anvil.util.timer') as mock_timer:
       mock_timer.side_effect = [1, 2, 3, 4]
       log_source.log_debug('debug')
       log_source.log_info('info', 'test')
@@ -189,7 +189,7 @@ class LogSourceTest(unittest2.TestCase):
     log_source = build_logging.LogSource()
     # Inherit should default to normal of no parent exists.
     log_source.verbosity = enums.Verbosity.INHERIT
-    with patch('__main__.util.timer') as mock_timer:
+    with patch('anvil.util.timer') as mock_timer:
       mock_timer.side_effect = [1, 2, 3]
       log_source.log_debug('debug')
       log_source.log_info('info')
@@ -211,7 +211,7 @@ class LogSourceTest(unittest2.TestCase):
 
   def testMessagesSentToLogSink(self):
     log_source = build_logging.LogSource(enums.Verbosity.VERBOSE)
-    with patch('__main__.util.timer') as mock_timer:
+    with patch('anvil.util.timer') as mock_timer:
       mock_timer.side_effect = [1, 2, 3, 4]
       log_source.log_debug('debug', 'bar')
       log_source.log_info('info', 'bar')
@@ -228,7 +228,7 @@ class LogSourceTest(unittest2.TestCase):
     self.assertEquals(expected, log_sink.mock_calls)
 
     log_sink.mock_calls = []
-    with patch('__main__.util.timer') as mock_timer:
+    with patch('anvil.util.timer') as mock_timer:
       mock_timer.side_effect = [5]
       log_source.log_debug('debug', 'bar')
     expected = [
@@ -243,7 +243,7 @@ class LogSourceTest(unittest2.TestCase):
     parent_source.add_log_sink(log_sink)
     parent_source.add_child(child_source)
 
-    with patch('__main__.util.timer') as mock_timer:
+    with patch('anvil.util.timer') as mock_timer:
       mock_timer.side_effect = [1]
       child_source.log_debug('debug', 'foo')
     expected = [
