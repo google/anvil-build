@@ -16,6 +16,14 @@ from anvil import enums
 from anvil import util
 
 
+def _message(log_level, time, name, message):
+  return {
+    'log_level': log_level,
+    'time': time,
+    'name': name,
+    'message': message
+  }
+
 class WorkUnitTest(unittest2.TestCase):
 
   def testRecordWorkUnits(self):
@@ -220,10 +228,10 @@ class LogSourceTest(unittest2.TestCase):
     log_sink = MagicMock()
     log_source.add_log_sink(log_sink)
     expected = [
-      call.log((enums.LogLevel.DEBUG, 1, 'bar', '[DEBUG] debug')),
-      call.log((enums.LogLevel.INFO, 2, 'bar', '[INFO] info')),
-      call.log((enums.LogLevel.WARNING, 3, 'foo', '[WARNING] warning')),
-      call.log((enums.LogLevel.ERROR, 4, 'foo', '[ERROR] error'))
+      call.log(_message(enums.LogLevel.DEBUG, 1, 'bar', '[DEBUG] debug')),
+      call.log(_message(enums.LogLevel.INFO, 2, 'bar', '[INFO] info')),
+      call.log(_message(enums.LogLevel.WARNING, 3, 'foo', '[WARNING] warning')),
+      call.log(_message(enums.LogLevel.ERROR, 4, 'foo', '[ERROR] error'))
     ]
     self.assertEquals(expected, log_sink.mock_calls)
 
@@ -232,7 +240,7 @@ class LogSourceTest(unittest2.TestCase):
       mock_timer.side_effect = [5]
       log_source.log_debug('debug', 'bar')
     expected = [
-      call.log((enums.LogLevel.DEBUG, 5, 'bar', '[DEBUG] debug'))
+      call.log(_message(enums.LogLevel.DEBUG, 5, 'bar', '[DEBUG] debug'))
     ]
     self.assertEquals(expected, log_sink.mock_calls)
 
@@ -247,7 +255,7 @@ class LogSourceTest(unittest2.TestCase):
       mock_timer.side_effect = [1]
       child_source.log_debug('debug', 'foo')
     expected = [
-      call.log((enums.LogLevel.DEBUG, 1, 'foo', '[DEBUG] debug'))
+      call.log(_message(enums.LogLevel.DEBUG, 1, 'foo', '[DEBUG] debug'))
     ]
     self.assertEquals(expected, log_sink.mock_calls)
     
