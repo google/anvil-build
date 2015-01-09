@@ -288,7 +288,12 @@ class LogSource(object):
 
     self.log_sinks.append(log_sink)
     for message in self.buffered_messages:
-      log_sink.log(message)
+      log_sink.log({
+        'log_level': message[0],
+        'time': message[1],
+        'name': message[2],
+        'message': message[3]
+      })
 
   def log_debug(self, message, name=None):
     """Logs a message at DEBUG log level.
@@ -388,7 +393,12 @@ class LogSource(object):
     """
     if self.log_sinks:
       for log_sink in self.log_sinks:
-        log_sink.log(message)
+        log_sink.log({
+          'log_level': message[0],
+          'time': message[1],
+          'name': message[2],
+          'message': message[3]
+        })
     else:
       self.buffered_messages.append(message)
 
