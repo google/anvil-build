@@ -3,6 +3,8 @@ Anvil - a modern build system
 
 [![Build Status](https://secure.travis-ci.org/google/anvil-build.png)](http://travis-ci.org/google/anvil-build)
 
+**NOTE**: this project has been deprecated. [Bazel](https://bazel.build/) is an open source build system that shares roots with the design of anvil, and is a superset of the functionality available here.
+
 Anvil is a build system designed to ease the construction of content pipelines, taking many concepts and the rule file syntax that powers Google's internal build system and making them accessible in a small, open-source Python library. It features a rich and extensible build file format and many built-in rules to get started.
 
 Modern web apps and games have shifted to be more content than code and older build systems (make/scons/etc) are ill-suited for this shift. Most developers now roll their own shell scripts and hack together tools, but as projects scale in both size and complexity they fall apart. Limiting the engineering robustness of many large games is now this lack of solid content pipeline, not language or browser features. Anvil is designed to help fill this gap and let developers build polished, efficient, and cross-browser applications.
