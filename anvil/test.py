@@ -123,7 +123,7 @@ class FixtureTestCase(AsyncTestCase):
       self.root_path = os.path.join(self.root_path, self.fixture)
       build_path = util.get_anvil_path()
       if not build_path:
-        raise Error('Unable to find build path')
+        raise Exception('Unable to find build path')
       fixture_path = os.path.join(
           build_path, '..', 'test', 'fixtures', self.fixture)
       target_path = os.path.join(self.temp_path, self.fixture)
